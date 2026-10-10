@@ -1,0 +1,17 @@
+build*/
+sdkconfig.old
+.venv/
+__pycache__/
+*.pyc
+*.log
+*.elf
+*.map
+.vscode/
+.DS_Store
+Thumbs.db
+tools/feishu_bridge_config.json
+.env
+.env.*
+*.pem
+*.key
+*nvs*.bin
