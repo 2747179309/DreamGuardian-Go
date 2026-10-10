@@ -1,0 +1,10 @@
+/* One shared text-link treatment, matching the EEG detail entry. */
+#view-dashboard .dashboard-detail-link{
+ color:var(--cyan)!important;font-family:inherit;font-size:11px!important;font-weight:800!important;line-height:1!important;letter-spacing:normal;
+ background:transparent!important;border:0!important;box-shadow:none!important;text-decoration:none;white-space:nowrap;
+}
+#view-dashboard button.dashboard-detail-link{min-width:88px;min-height:44px;padding:0 10px!important;display:inline-flex;justify-content:flex-end;align-items:center;border-radius:6px;cursor:pointer;flex-shrink:0}
+#view-dashboard .dashboard-detail-link::after{content:none!important}
+#view-dashboard button.dashboard-detail-link:hover{color:#b4f3ff!important}
+#view-dashboard button.dashboard-detail-link:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#view-dashboard .eeg-wave-caption{right:100px;overflow:hidden}

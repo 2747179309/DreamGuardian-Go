@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>睡眠监测</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    padding: 20px; max-width: 900px; margin: 0 auto;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  h1 { font-size: 22px; }
+  .status { font-size: 13px; color: #8b949e; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #f85149; margin-right: 6px; vertical-align: middle; }
+  .dot.ok { background: #3fb950; }
+  a.back { color: #58a6ff; text-decoration: none; font-size: 13px; }
+
+  .state-row { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+  .state-card { flex: 1; min-width: 180px; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; text-align: center; }
+  .state-card .label { font-size: 12px; color: #8b949e; }
+  .state-card .big { font-size: 30px; font-weight: 800; margin-top: 4px; }
+  .sleep-awake { color: #d29922; }
+  .sleep-light { color: #58a6ff; }
+  .sleep-deep  { color: #1f6feb; }
+  .contact-ok   { color: #3fb950; }
+  .contact-bad  { color: #f85149; }
+
+  .band-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .band-card h2 { font-size: 14px; color: #8b949e; margin-bottom: 12px; font-weight: 600; }
+  .band { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .band .name { width: 92px; font-size: 13px; color: #e6edf3; flex-shrink: 0; }
+  .band .track { flex: 1; height: 16px; background: #21262d; border-radius: 8px; overflow: hidden; }
+  .band .fill { height: 100%; width: 0%; border-radius: 8px; transition: width .15s; }
+  .band .pct { width: 44px; text-align: right; font-size: 12px; color: #8b949e; font-variant-numeric: tabular-nums; }
+
+  .chart-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .chart-card h2 { font-size: 14px; color: #8b949e; margin-bottom: 10px; font-weight: 600; }
+  canvas { width: 100%; height: 240px; display: block; }
+  .hint { font-size: 12px; color: #57606a; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>😴 睡眠监测</h1>
+  <div class="status">
+    <a class="back" href="/">← 返回睡姿监测</a>
+    <span style="margin-left:14px"><span class="dot" id="dot"></span><span id="statusText">连接中…</span></span>
+  </div>
+</header>
+
+<div class="state-row">
+  <div class="state-card">
+    <div class="label">睡眠状态</div>
+    <div class="big" id="sleepState">—</div>
+  </div>
+  <div class="state-card">
+    <div class="label">电极接触</div>
+    <div class="big" id="contact">—</div>
+  </div>
+  <div class="state-card">
+    <div class="label">信号幅度（峰峰值）</div>
+    <div class="big" id="ppVal">—</div>
+  </div>
+</div>
+
+<div class="band-card">
+  <h2>频段能量占比</h2>
+  <div id="bands"></div>
+  <div class="hint">δ 深睡 · θ 浅睡 · α 清醒 · β 活跃 · 肌电=肌肉张力（睡越深越低）</div>
+</div>
+
+<div class="chart-card">
+  <h2>频谱（0–50 Hz）</h2>
+  <canvas id="spec"></canvas>
+</div>
+
+<div class="chart-card">
+  <h2>波形（去直流，最近 2.56 秒）</h2>
+  <canvas id="wave"></canvas>
+</div>
+
+<script>
+const FS = 100;        // 采样率 Hz（固件 ADS1120 100Hz）
+const NFFT = 256;      // FFT 点数 -> 频率分辨率 0.39Hz，窗口 2.56 秒
+
+// 睡眠相关频段（Hz）
+const BANDS = [
+  { key: 'delta', name: 'δ 深睡', lo: 0.5, hi: 4,  color: '#1f6feb' },
+  { key: 'theta', name: 'θ 浅睡', lo: 4,   hi: 8,  color: '#58a6ff' },
+  { key: 'alpha', name: 'α 清醒', lo: 8,   hi: 13, color: '#3fb950' },
+  { key: 'beta',  name: 'β 活跃', lo: 13,  hi: 30, color: '#d29922' },
+  { key: 'emg',   name: '肌电',   lo: 30,  hi: 48, color: '#f85149' },
+];
+
+// ---------- 构建频段 UI ----------
+const bandsBox = document.getElementById('bands');
+BANDS.forEach(b => {
+  const d = document.createElement('div');
+  d.className = 'band';
+  d.innerHTML = `<div class="name">${b.name}</div>
+    <div class="track"><div class="fill" id="fill_${b.key}" style="background:${b.color}"></div></div>
+    <div class="pct" id="pct_${b.key}">0%</div>`;
+  bandsBox.appendChild(d);
+});
+
+// ---------- 就地 radix-2 FFT ----------
+function fft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      [re[i], re[j]] = [re[j], re[i]];
+      [im[i], im[j]] = [im[j], im[i]];
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len;
+    const wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let j = 0; j < len / 2; j++) {
+        const a = i + j, b = i + j + len / 2;
+        const tr = re[b] * cr - im[b] * ci;
+        const ti = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - tr; im[b] = im[a] - ti;
+        re[a] += tr; im[a] += ti;
+        const ncr = cr * wr - ci * wi;
+        ci = cr * wi + ci * wr;
+        cr = ncr;
+      }
+    }
+  }
+}
+
+function binOf(hz) { return Math.max(0, Math.min(NFFT / 2, Math.round(hz / FS * NFFT))); }
+
+// ---------- 分析：返回频谱幅度 + 频段能量 + 波形 ----------
+function analyze(raw) {
+  const n = raw.length;
+  const mean = raw.reduce((a, b) => a + b, 0) / n;
+  const ac = raw.map(v => v - mean);            // 去直流波形
+  const re = ac.map((v, i) => v * 0.5 * (1 - Math.cos(2 * Math.PI * i / (n - 1)))); // Hann
+  const im = new Array(n).fill(0);
+  fft(re, im);
+  const mag = re.map((r, i) => Math.sqrt(r * r + im[i] * im[i]));
+
+  const bandPow = BANDS.map(b => {
+    let s = 0;
+    const a = binOf(b.lo), c = binOf(b.hi);
+    for (let i = a; i <= c; i++) s += mag[i];
+    return s;
+  });
+
+  let mn = Infinity, mx = -Infinity;
+  for (const v of ac) { if (v < mn) mn = v; if (v > mx) mx = v; }
+
+  return { mag, bandPow, ac, pp: mx - mn };
+}
+
+// ---------- 睡眠状态判定（阈值初值，实测后可调） ----------
+function sleepState(bandPow) {
+  const total = bandPow.reduce((a, b) => a + b, 0) || 1;
+  const [d, t, a, b, emg] = bandPow.map(x => x / total);
+  if (emg > 0.35) return { txt: '清醒 / 活动', cls: 'sleep-awake' };
+  if (d > 0.40)    return { txt: '深睡',         cls: 'sleep-deep' };
+  if (t > a && t > 0.22) return { txt: '浅睡',  cls: 'sleep-light' };
+  if (a > 0.32)    return { txt: '清醒（闭眼）', cls: 'sleep-awake' };
+  return { txt: '浅睡', cls: 'sleep-light' };
+}
+
+function contactState(pp) {
+  // 悬空时读数满偏乱跳（峰峰值极大）；贴肉后稳定
+  if (pp > 40000) return { txt: '未贴紧', cls: 'contact-bad' };
+  if (pp > 20000) return { txt: '贴得松', cls: 'sleep-awake' };
+  return { txt: '已贴紧', cls: 'contact-ok' };
+}
+
+// ---------- 画图 ----------
+const specCv = document.getElementById('spec');
+const waveCv = document.getElementById('wave');
+
+function fitCanvas(cv) {
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = r.width * dpr;
+  cv.height = r.height * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { W: r.width, H: r.height, ctx };
+}
+
+function drawSpec(mag) {
+  const { W, H, ctx } = fitCanvas(specCv);
+  ctx.clearRect(0, 0, W, H);
+  const half = NFFT / 2;              // 0..128 -> 0..50Hz
+  const maxM = Math.max(...mag.slice(1, half)) || 1;
+  ctx.fillStyle = '#3fb950';
+  const bw = W / half;
+  for (let i = 1; i < half; i++) {
+    const h = (mag[i] / maxM) * (H - 20);
+    ctx.fillRect(i * bw, H - h, Math.max(1, bw - 1), h);
+  }
+  // 刻度
+  ctx.fillStyle = '#57606a';
+  ctx.font = '11px sans-serif';
+  for (let f = 0; f <= 50; f += 10) {
+    const x = f / 50 * W;
+    ctx.fillText(f + 'Hz', x, H - 4);
+  }
+}
+
+function drawWave(ac) {
+  const { W, H, ctx } = fitCanvas(waveCv);
+  ctx.clearRect(0, 0, W, H);
+  if (ac.length < 2) return;
+  let mn = Infinity, mx = -Infinity;
+  for (const v of ac) { if (v < mn) mn = v; if (v > mx) mx = v; }
+  const span = (mx - mn) || 1;
+  const mid = (mx + mn) / 2;
+  ctx.strokeStyle = '#21262d';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < ac.length; i++) {
+    const x = (i / (ac.length - 1)) * W;
+    const y = H / 2 - ((ac[i] - mid) / span) * H * 0.85;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+// ---------- 主循环 ----------
+async function tick() {
+  try {
+    const r = await fetch('/data', { cache: 'no-store' });
+    const j = await r.json();
+    document.getElementById('statusText').textContent = j.serial_ok ? '串口已连接' : '串口未连接';
+    document.getElementById('dot').className = 'dot' + (j.serial_ok ? ' ok' : '');
+
+    const eeg = j.eeg || [];
+    if (eeg.length >= NFFT) {
+      const raw = eeg.slice(-NFFT);
+      const { mag, bandPow, ac, pp } = analyze(raw);
+
+      // 频段能量条
+      const total = bandPow.reduce((a, b) => a + b, 0) || 1;
+      BANDS.forEach((b, i) => {
+        const pct = bandPow[i] / total * 100;
+        document.getElementById('fill_' + b.key).style.width = pct + '%';
+        document.getElementById('pct_' + b.key).textContent = pct.toFixed(0) + '%';
+      });
+
+      // 睡眠 + 接触状态
+      const s = sleepState(bandPow);
+      const el = document.getElementById('sleepState');
+      el.textContent = s.txt;
+      el.className = 'big ' + s.cls;
+      const c = contactState(pp);
+      const ce = document.getElementById('contact');
+      ce.textContent = c.txt;
+      ce.className = 'big ' + c.cls;
+      document.getElementById('ppVal').textContent = Math.round(pp);
+
+      drawSpec(mag);
+      drawWave(ac);
+    }
+  } catch (e) {
+    document.getElementById('statusText').textContent = '连接失败';
+    document.getElementById('dot').className = 'dot';
+  }
+}
+
+setInterval(tick, 200);
+tick();
+</script>
+</body>
+</html>

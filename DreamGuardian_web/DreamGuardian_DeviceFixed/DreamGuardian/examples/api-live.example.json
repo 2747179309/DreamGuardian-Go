@@ -1,0 +1,56 @@
+{
+  "sample": {
+    "seq": 2387,
+    "connected": true,
+    "presence": false,
+    "heart_bpm": null,
+    "breath_bpm": null,
+    "csi_motion": 0.19,
+    "sleep_state": "out_of_bed",
+    "assist_state": "off",
+    "guard_mode": "off",
+    "wake_risk": 95,
+    "intervention_action": "none"
+  },
+  "pillow": {
+    "device_id": "pillow-esp-01",
+    "seq": 10,
+    "pressure_zones": [0, 37, 0, 0, 0, 0],
+    "pressure_contact": 0.03,
+    "pressure_change": 0,
+    "vibration_feedback": 0,
+    "age_ms": 120,
+    "stale": false
+  },
+  "esp": {
+    "device_id": "pillow-esp-01",
+    "seq": 10,
+    "uptime_ms": 16349,
+    "eeg": {
+      "sample_rate_hz": 100,
+      "raw_samples": [120, -95, 83, -72],
+      "unit": "adc_count",
+      "signal_quality": null,
+      "contact": false,
+      "bands": {"delta": null, "theta": null, "alpha": null, "beta": null, "gamma": null}
+    },
+    "metrics": {
+      "vibration_enabled": 0,
+      "vibration_level_pct": 0,
+      "electrode_ble_connected": 0,
+      "electrode_enabled": 0,
+      "electrode_intensity_level": 0,
+      "eeg_scale_uv_per_count": 0.488
+    },
+    "age_ms": 115,
+    "stale": false
+  },
+  "model": {"ready": true, "label": "unknown", "confidence": 0, "scores": {}},
+  "voice_state": {"mode": "wait", "detail": "等待唤醒词：嗨，小梦"},
+  "snore": {"ready": true, "active": false, "probability": 0, "event_count": 0},
+  "sleep_guide": {
+    "enabled": true,
+    "mode": "waiting",
+    "timer": {"running": false, "elapsed_sec": 933, "phase": "idle"}
+  }
+}

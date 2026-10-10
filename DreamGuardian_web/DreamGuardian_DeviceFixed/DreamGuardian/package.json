@@ -1,0 +1,11 @@
+{
+  "name": "dreamguardian-web-handoff-v5",
+  "private": true,
+  "scripts": {
+    "build:3d": "node tools/build-3d.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9",
+    "three": "0.179.1"
+  }
+}

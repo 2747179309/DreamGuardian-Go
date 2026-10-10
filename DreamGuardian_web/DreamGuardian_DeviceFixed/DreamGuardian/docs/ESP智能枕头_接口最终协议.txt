@@ -1,0 +1,193 @@
+DreamGuardian 智能枕头 ESP 接口最终定稿
+
+请以本文件为唯一有效协议。前面的 /api/pillow/waveform 方案作废，不要实现该路由。
+
+一、为什么现在 ping 不通
+
+10.34.179.161 是 NX 当前局域网地址，只能从同一局域网或已正确路由的网络访问。你现在 ping 全丢包，通常表示不在同一网络、无线 AP 开启了客户端隔离，或 NX 地址之后发生变化。先按下面协议完成固件；现场联调时将 NX_HOST 做成可配置项并确认最新地址，不要因为 ping 不通自行猜测或修改 API 路径。
+
+二、最终只使用两条 POST 接口
+
+1. 枕头六点压力、温湿度、IMU 和震动反馈：
+
+POST http://NX_HOST:8000/api/pillow/telemetry
+
+2. EEG 原始波形、FFT 五频段以及其他数值型设备状态：
+
+POST http://NX_HOST:8000/api/esp/telemetry
+
+调试时还可以读取：
+
+GET http://NX_HOST:8000/api/esp/telemetry
+
+不要再实现或调用 /api/pillow/waveform。当前网页已经从 /api/live 中读取 esp.eeg.raw_samples 和 esp.eeg.bands，用 /api/esp/telemetry 即可进入网页数据链。
+
+三、/api/esp/telemetry 的准确请求格式
+
+Content-Type: application/json
+
+完整示例（raw_samples 这里只写少量点用于说明，固件实际每包发送 50 点）：
+
+{
+  "device_id": "pillow-esp-01",
+  "seq": 8801,
+  "uptime_ms": 356020,
+  "eeg": {
+    "sample_rate_hz": 100,
+    "raw_samples": [3.2, 4.1, 2.8, 1.7, -0.5, -2.1, -1.4, 0.6],
+    "unit": "uV",
+    "signal_quality": 91.0,
+    "contact": true,
+    "bands": {
+      "delta": 0.42,
+      "theta": 0.24,
+      "alpha": 0.18,
+      "beta": 0.12,
+      "gamma": 0.04
+    }
+  },
+  "metrics": {
+    "vibration_enabled": 0,
+    "vibration_level_pct": 0,
+    "electrode_ble_connected": 1,
+    "electrode_contact_left": 1,
+    "electrode_contact_right": 1,
+    "electrode_enabled": 0,
+    "electrode_intensity_level": 0,
+    "electrode_battery_pct": 76
+  }
+}
+
+成功响应：
+
+{
+  "ok": true,
+  "device_id": "pillow-esp-01",
+  "seq": 8801,
+  "received_at": 1788841200.123
+}
+
+准确限制如下：
+
+1. device_id 长度 1～64，只能包含英文字母、数字、短横线、下划线和点。
+2. seq、uptime_ms 必须大于等于 0；seq 单调递增，ESP 重启后允许重新从 0 开始。
+3. 请求必须至少包含 eeg 或非空 metrics，否则 NX 返回 HTTP 422。
+4. eeg.sample_rate_hz 合法范围 1～4000，本设备发送真实值 100。
+5. eeg.raw_samples 是一维数字数组，不是二维数组；最多 512 点。禁止 NaN、Infinity，绝对值不得超过 1000000。
+6. eeg.unit 使用 "uV"。如果当前只能提供 ADC 原始码，必须写 "adc_count"，不要冒充 uV；换算比例暂放进 metrics，例如 "eeg_scale_uv_per_count"。
+7. eeg.signal_quality 是 0～100，不是 0～1。没有可靠算法时传 null。
+8. eeg.contact 是贴片真实接触状态。脱落、lead-off 或未连接时为 false。
+9. eeg.bands 的字段名固定为 delta、theta、alpha、beta、gamma，值必须大于等于 0。这里发送 0～1 的相对功率。
+10. metrics 最多 32 项；key 最长 48 字符，value 只能是有限数字。布尔状态统一发数值 0 或 1；不能把模式名称、错误字符串放进 metrics。
+11. 任一数据无效时传 null 或省略可选字段，禁止发送旧值、随机值、字符串数字、NaN 或 Infinity。
+
+四、NX 后端对应的数据模型
+
+下面就是 NX 当前使用的字段结构，可据此生成 cJSON：
+
+class EegBands(BaseModel):
+    delta: Optional[float] = Field(None, ge=0)
+    theta: Optional[float] = Field(None, ge=0)
+    alpha: Optional[float] = Field(None, ge=0)
+    beta: Optional[float] = Field(None, ge=0)
+    gamma: Optional[float] = Field(None, ge=0)
+
+class EegTelemetry(BaseModel):
+    sample_rate_hz: float = Field(250, ge=1, le=4000)
+    raw_samples: List[float] = Field(default_factory=list, max_items=512)
+    unit: str = Field("uV", max_length=12)
+    signal_quality: Optional[float] = Field(None, ge=0, le=100)
+    contact: Optional[bool] = None
+    bands: EegBands = Field(default_factory=EegBands)
+
+class EspTelemetry(BaseModel):
+    device_id: str = Field("sensor-esp", min_length=1, max_length=64)
+    seq: Optional[int] = Field(None, ge=0)
+    uptime_ms: Optional[int] = Field(None, ge=0)
+    eeg: Optional[EegTelemetry] = None
+    metrics: Dict[str, float] = Field(default_factory=dict)
+
+对应路由：
+
+@app.post("/api/esp/telemetry")
+async def receive_esp_telemetry(payload: EspTelemetry, request: Request):
+    if payload.eeg is None and not payload.metrics:
+        raise HTTPException(status_code=422,
+                            detail="at least eeg or metrics is required")
+    data = payload.dict()
+    data.update({"received_at": time.time(),
+                 "source_ip": request.client.host if request.client else None})
+    runtime.latest_esp = data
+    return {"ok": True, "device_id": payload.device_id,
+            "seq": payload.seq, "received_at": data["received_at"]}
+
+五、FFT 是否由 ESP 计算
+
+结论：需要 ESP 端计算并直接发送五频段相对功率，但同时必须发送原始 EEG。原始波形是数据源，NX 后续可复核；不能只发五个频段结果。
+
+固定算法：
+
+1. 采样率：真实 100 Hz。
+2. FFT 长度：256 点。
+3. 窗函数：Hann。
+4. 步进：128 点，50% 重叠；约每 1.28 秒更新一次频段结果。
+5. 分辨率：100 / 256 = 0.390625 Hz。
+6. 每窗先去直流（减均值），再乘 Hann 窗，然后计算功率谱。要累加幅值平方，不能直接累加 FFT 幅值。
+7. 频段采用半开区间避免边界重复：
+   - delta：[0.5, 4) Hz
+   - theta：[4, 8) Hz
+   - alpha：[8, 13) Hz
+   - beta：[13, 30) Hz
+   - gamma：[30, 45] Hz
+8. 相对功率分母为 0.5～45 Hz 总功率；五项归一化后之和应约等于 1，允许浮点误差。
+9. 100 Hz 采样链路需要不高于约 45 Hz 的抗混叠低通处理。不要把 50 Hz 及以上的混叠能量当成 gamma。
+10. 贴片未接触、ADC 饱和、有效点不足或总功率过低时：contact=false，五个 bands 均传 null，禁止保留上一窗结果。
+
+六、发送周期和缓冲
+
+1. EEG 保持 100 Hz 连续采样，使用独立环形缓冲，不得在采集任务里同步等待 HTTP。
+2. 每 500 ms 取最新连续 50 点，通过 /api/esp/telemetry 发送；这样网页波形刷新率为 2 Hz。
+3. FFT 使用独立的 256 点滚动窗口，与每个 HTTP 包的 50 点分包无关。
+4. 网络断开时最多保留最近 2 秒波形，满后丢最旧数据；恢复后不要补发整晚或大量陈旧波形。
+5. HTTP 建议连接超时 1 秒、总超时 2 秒；失败后按 1、2、4、8、10 秒退避。请求失败不能导致重启、停止采样或断开蓝牙。
+
+七、枕头压力接口
+
+压力仍单独发送到：
+
+POST http://NX_HOST:8000/api/pillow/telemetry
+
+JSON：
+
+{
+  "device_id": "pillow-esp-01",
+  "seq": 12345,
+  "pressure_zones": [21.5, 46.2, 30.1, 18.4, 42.8, 25.0],
+  "pressure_contact": 0.73,
+  "pressure_change": 0.04,
+  "imu_motion": 0.018,
+  "temperature_c": 26.4,
+  "humidity_pct": 48.2,
+  "vibration_feedback": 0.0
+}
+
+pressure_zones 当前按 6 点固定顺序：上排左到右 P1、P2、P3，下排左到右 P4、P5、P6。建议归一化为 0～100。该数组不能为空、最多 64 项且必须全部为有限数字，否则 HTTP 422。建议每 500 ms 上报一次。
+
+八、震动和电极贴片约束
+
+1. 目前先将数值状态放入 /api/esp/telemetry 的 metrics。NX 网页端后续会增加对应状态卡片。
+2. enabled、level、contact、BLE connected 必须来自真实驱动或设备回执，不能只回显最后发送的命令。
+3. ESP 不得根据 EEG 或睡眠状态自行启动震动或电极按摩。
+4. 断联、复位或异常时执行器必须保持或恢复关闭。
+5. 电极贴片必须保留厂商的强度上限、定时关闭、接触检测和硬件保护，不得自行生成或修改人体电刺激波形。
+
+九、烧录后必须交付
+
+1. 修改后的完整源码、可烧录固件、分区表和编译环境版本。
+2. 一份来自真实硬件的完整 /api/esp/telemetry JSON，其中 raw_samples 必须包含实际 50 点。
+3. 一份真实 /api/pillow/telemetry JSON。
+4. 串口日志需要显示 NX_HOST、HTTP 状态码、seq、EEG 缓冲占用、丢样数、剩余堆内存和 BLE 重连次数，但不得输出密码。
+5. 完成断网 30 秒恢复测试和至少 2 小时稳定性测试；网络失败不能造成 ESP 重启或采样停止。
+6. 不得用随机数或固定演示数组冒充任何传感器数据。
+
+请按本最终协议一次修改、编译并烧录。NX_HOST 必须可配置；到现场同一局域网后再执行 HTTP 200 联调。

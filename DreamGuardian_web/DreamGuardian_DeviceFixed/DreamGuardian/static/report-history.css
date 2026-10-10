@@ -1,0 +1,12 @@
+#view-reports>.page-heading{z-index:10;overflow:visible}
+.report-history{position:relative;flex:none}
+#open-sleep-record{flex:none;min-height:44px;padding:10px 20px;border:1px solid #82d6da88;border-radius:10px;background:#245963;color:#edffff;font-size:15px;font-weight:600}
+#open-sleep-record:hover{background:#2e6a74}
+.sleep-record-list:not([hidden]){position:absolute;right:0;top:calc(100% + 10px);z-index:20;display:grid;grid-template-columns:1fr;gap:8px;width:min(440px,calc(100vw - 48px));max-height:min(420px,60vh);padding:12px;border:1px solid #699cac;border-radius:14px;background:#102737;box-shadow:0 18px 48px #0009;overflow-y:auto;overscroll-behavior:contain}
+.sleep-record{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;min-height:76px;padding:14px 16px;background:#0b2133;border:1px solid #729ab43b;border-radius:10px}
+.sleep-record:hover,.sleep-record:focus-visible{background:#193c50;border-color:#86d7d7}
+.sleep-record strong{display:block;color:#e0eff7;font-size:15px}
+.sleep-record small{display:block;margin-top:7px;color:#a3becb;font-size:12px}
+.sleep-record-score{flex:none;color:#9fe0db;font-size:16px}
+@media(max-height:800px){#open-sleep-record{min-height:36px;padding:7px 15px;font-size:13px}}
+@media(max-width:720px){#open-sleep-record{padding:7px 10px;font-size:12px}}

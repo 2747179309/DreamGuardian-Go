@@ -1,0 +1,13 @@
+.avatar-stage .xiaomeng,.dashboard-avatar .xiaomeng{bottom:-10%;height:120%;width:120%;max-width:120%;object-fit:contain;border:0;border-radius:0;box-shadow:none;filter:none;transform:translateX(-50%);-webkit-mask-image:none;mask-image:none}
+.avatar-stage .orbit,.avatar-stage .avatar-glow{display:none}
+/* Keep the whole homepage character inside its stage, including motion headroom. */
+#avatar-stage .xiaomeng,#monitor-avatar-stage .xiaomeng{bottom:4%;height:92%;width:92%;max-width:92%}
+.avatar-stage[data-mode=wake] .xiaomeng{animation:xiaomeng-greet 1.8s ease-in-out infinite}
+.avatar-stage[data-mode=listen] .xiaomeng{animation:xiaomeng-listen 2.4s ease-in-out infinite}
+.avatar-stage[data-mode=think] .voice-ripples i{opacity:1;animation:voicebar 1.4s ease-in-out infinite alternate}
+.ai-intro img{object-fit:contain;border:0;border-radius:0;box-shadow:none;transform:scale(1.2);-webkit-mask-image:none;mask-image:none}
+.xiaomeng-demo-control{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:12px;padding:5px 0;color:var(--cyan)}
+.xiaomeng-demo-control select{max-width:150px;background:#061423;color:#e7f7ff;border:1px solid #41708c;border-radius:8px;padding:5px;font:inherit}
+@keyframes xiaomeng-greet{50%{transform:translateX(-50%) rotate(2deg)}}
+@keyframes xiaomeng-listen{50%{transform:translateX(-50%) translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.avatar-stage .xiaomeng,.avatar-stage .voice-ripples i{animation:none!important}}

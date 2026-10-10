@@ -1,0 +1,784 @@
+/*
+ * pressure_fw - ESP32-S3 合并版固件
+ *
+ * 同时干三件事（不再需要双分区切换）：
+ *   1. 6 路压力 + 1 路脑电波 ADC 采样，10Hz，串口打印原始数据。
+ *   2. WiFi 上传：每 500ms 把压力打包 JSON POST 到 Jetson NX。
+ *   3. BLE Central：上电自动直连按摩仪，通过串口命令控制按摩仪。
+ *
+ * 串口命令（USB Serial/JTAG）：
+ *   level <1-5>   调档
+ *   start         开始
+ *   stop          停止
+ *   connect       手动重连按摩仪
+ *   status        查看 BLE 连接状态
+ *
+ * 数据链路：
+ *   - 压力/脑电波：ADC1 -> 串口（电脑网页实时显示）+ WiFi -> NX
+ *   - 按摩仪：串口命令 -> BLE 写 FFF2 -> 按摩仪；按摩仪 ACK 走 FFF1 notify 回显
+ *
+ * 引脚分配（ADC1，避开 boot/strapping/USB）：
+ *   GPIO1 -> ADC1_CH0（传感器1 中下）  GPIO5 -> ADC1_CH4（传感器4 中上）
+ *   GPIO2 -> ADC1_CH1（传感器2 左下）  GPIO6 -> ADC1_CH5（传感器5 左上）
+ *   GPIO4 -> ADC1_CH3（传感器3 右下）  GPIO7 -> ADC1_CH6（传感器6 右上）
+ *   GPIO8 -> ADC1_CH7（脑电波 EEG，单模拟信号线）
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <stdbool.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_adc/adc_oneshot.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "esp_err.h"
+#include "esp_http_client.h"
+#include "esp_log.h"
+#include "cJSON.h"
+#include "nvs_flash.h"
+#include "driver/usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
+#include "esp_bt.h"
+#include "esp_bt_main.h"
+#include "esp_gap_ble_api.h"
+#include "esp_gattc_api.h"
+#include "esp_gatt_defs.h"
+#include "esp_gatt_common_api.h"
+#include "driver/spi_master.h"
+
+/* ================= 压力采样 ================= */
+#define N_CH 6
+#define EEG_CH ADC_CHANNEL_7     /* 脑电波 -> GPIO8 */
+
+#define SAMPLE_INTERVAL_MS 100   /* ADC 采样周期（10Hz） */
+#define UPLOAD_INTERVAL_MS 500   /* 上传周期（2Hz） */
+
+#define WIFI_SSID "REDMI K90"
+#define WIFI_PASS "7951712Wy"
+
+#define NX_URL "http://10.192.244.161:8000/api/pillow/telemetry"
+#define DEVICE_ID "pillow-esp"
+
+#define NOISE               250.0f   /* 低于此值视为无压力（悬空噪声约 200） */
+#define CONTACT_FULL_SCALE  12000.0f /* 6 路去噪总和"强接触"满量程 */
+#define CHANGE_FULL_SCALE   4000.0f  /* 短时变化量"剧烈"满量程 */
+
+/* ================= 按摩仪 BLE ================= */
+#define MASSAGE_TARGET_MAC    "EC:23:09:15:EB:BE"
+#define MASSAGE_ADDR_TYPE     BLE_ADDR_TYPE_PUBLIC
+
+#define SRV_UUID16            0xFFF0
+#define CHAR_TX_UUID16        0xFFF2   /* 写控制命令 */
+#define CHAR_RX_UUID16        0xFFF1   /* Notify 收 ACK/状态 */
+
+#define FRAME_HEAD            0x5A
+#define FRAME_TAIL            0xA5
+#define CMD_INTENSITY         0x40
+#define CMD_START             0x3A
+#define CMD_STOP              0x38
+#define CMD_ACK               0xC0
+
+#define ACK_BIT               (1 << 0)
+#define ACK_TIMEOUT_MS        2000
+
+/* ================= ADS1120 SPI ADC（两个脑电波传感器） ================= */
+#define ADS1120_CS     10   /* FSPICS0 */
+#define ADS1120_MOSI   11   /* FSPID  (DIN) */
+#define ADS1120_SCLK   12   /* FSPICLK */
+#define ADS1120_MISO   13   /* FSPIQ  (DOUT/DRDY) */
+
+#define ADS1120_MUX_AIN0   0x08  /* 单端 AIN0 (AINP=AIN0, AINN=AVSS) */
+#define ADS1120_MUX_AIN1   0x09  /* 单端 AIN1 (AINP=AIN1, AINN=AVSS) */
+
+static const char *TAG = "pillow";
+static const char *TAG_MASSAGE = "MASSAGE";
+
+/* ---------- 压力状态 ---------- */
+static const adc_channel_t s_chans[N_CH] = {
+    ADC_CHANNEL_0, /* 传感器1 GPIO1 中下 */
+    ADC_CHANNEL_1, /* 传感器2 GPIO2 左下 */
+    ADC_CHANNEL_3, /* 传感器3 GPIO4 右下 */
+    ADC_CHANNEL_4, /* 传感器4 GPIO5 中上 */
+    ADC_CHANNEL_5, /* 传感器5 GPIO6 左上 */
+    ADC_CHANNEL_6, /* 传感器6 GPIO7 右上 */
+};
+
+/* pressure_zones 输出顺序：上排 5,4,6 / 下排 2,1,3（v[] 下标 = 传感器号-1） */
+static const int s_zone_idx[N_CH] = { 4, 3, 5, 1, 0, 2 };
+
+static adc_oneshot_unit_handle_t s_adc1 = NULL;
+static volatile bool s_wifi_connected = false;
+static esp_http_client_handle_t s_client = NULL;
+static uint32_t s_seq = 0;
+static int s_values[N_CH] = {0};
+static float s_ema[N_CH] = {0};
+static bool s_ema_init = false;
+static int s_eeg = 0;
+static float s_eeg_ema = 0;
+
+/* ---------- 按摩仪 BLE 状态 ---------- */
+static esp_gatt_if_t s_gattc_if = ESP_GATT_IF_NONE;
+static uint16_t s_conn_id = 0;
+static uint16_t s_svc_start = 0;
+static uint16_t s_svc_end = 0;
+static uint16_t s_fff1_handle = 0;   /* notify */
+static uint16_t s_fff2_handle = 0;   /* write  */
+static volatile bool s_connected = false;
+static volatile bool s_ready = false;
+static uint8_t s_pending_cmd = 0;
+static EventGroupHandle_t s_ack_evt = NULL;
+
+/* 1~5 档 -> 协议值（整体降一档：原映射 1,3,5,6,7 → 1,1,3,5,6，最高档从 7 降到 6） */
+static const uint8_t s_level_map[6] = {0, 0x01, 0x01, 0x03, 0x05, 0x06};
+
+static esp_bt_uuid_t s_srv_uuid = {
+    .len = ESP_UUID_LEN_16,
+    .uuid = {.uuid16 = SRV_UUID16},
+};
+
+/* ---------- ADS1120 状态 ---------- */
+static spi_device_handle_t s_ads_spi = NULL;
+
+/* ---------------- ADS1120 SPI ADC ---------------- */
+
+static void ads1120_transfer(const uint8_t *tx, uint8_t *rx, size_t len)
+{
+    spi_transaction_t t = {0};
+    t.length = len * 8;
+    t.tx_buffer = tx;
+    t.rx_buffer = rx;
+    esp_err_t err = spi_device_transmit(s_ads_spi, &t);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "ads1120 spi err: %s", esp_err_to_name(err));
+    }
+}
+
+static void ads1120_write_reg(uint8_t reg, uint8_t val)
+{
+    uint8_t tx[2] = {0x40 | (reg << 2), val};
+    ads1120_transfer(tx, NULL, 2);
+}
+
+static void ads1120_send_cmd(uint8_t cmd)
+{
+    uint8_t tx[1] = {cmd};
+    ads1120_transfer(tx, NULL, 1);
+}
+
+static int16_t ads1120_read_data(void)
+{
+    uint8_t tx[3] = {0x10, 0x00, 0x00}; /* RDATA + 2 dummy */
+    uint8_t rx[3] = {0};
+    ads1120_transfer(tx, rx, 3);
+    return (int16_t)((rx[1] << 8) | rx[2]);
+}
+
+static int16_t ads1120_read_channel(uint8_t mux)
+{
+    /* 单端模式：MUX + GAIN=1 + PGA_BYPASS=1（AINN=AVSS 必须旁路 PGA） */
+    ads1120_write_reg(0x00, (uint8_t)((mux << 4) | 0x01));
+    ads1120_send_cmd(0x08);        /* START/SYNC，单次转换 */
+    vTaskDelay(pdMS_TO_TICKS(8));  /* 330 SPS 单次转换约 3ms，留足余量 */
+    return ads1120_read_data();
+}
+
+static void ads1120_init(void)
+{
+    spi_bus_config_t bus = {
+        .mosi_io_num = ADS1120_MOSI,
+        .miso_io_num = ADS1120_MISO,
+        .sclk_io_num = ADS1120_SCLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 32,
+    };
+    ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus, SPI_DMA_DISABLED));
+
+    spi_device_interface_config_t dev = {
+        .clock_speed_hz = 1000000,  /* 1 MHz */
+        .mode = 1,                  /* CPOL=0, CPHA=1 */
+        .spics_io_num = ADS1120_CS,
+        .queue_size = 1,
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev, &s_ads_spi));
+
+    /* 复位 + 配置 */
+    ads1120_send_cmd(0x06);        /* RESET */
+    vTaskDelay(pdMS_TO_TICKS(10));
+    ads1120_write_reg(0x01, 0x90); /* DR=330SPS(100), MODE=单次(1) */
+    ads1120_write_reg(0x02, 0x00); /* 内部 2.048V 基准 */
+    ads1120_write_reg(0x03, 0x00); /* IDAC 不用，默认 */
+    ESP_LOGI(TAG, "ADS1120 ready (SPI2, 330SPS, 2.048V, single-end AIN0/AIN1)");
+}
+
+/* ---------------- HTTP ---------------- */
+
+static void http_reset(void)
+{
+    if (s_client) {
+        esp_http_client_cleanup(s_client);
+        s_client = NULL;
+    }
+}
+
+static bool http_post_json(const char *body)
+{
+    if (!s_client) {
+        esp_http_client_config_t cfg = {
+            .url = NX_URL,
+            .method = HTTP_METHOD_POST,
+            .timeout_ms = 2000,
+        };
+        s_client = esp_http_client_init(&cfg);
+        if (!s_client) {
+            ESP_LOGE(TAG, "http client init failed");
+            return false;
+        }
+        esp_http_client_set_header(s_client, "Content-Type", "application/json");
+    }
+
+    esp_err_t err = esp_http_client_set_post_field(s_client, body, strlen(body));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "set_post_field failed: %s", esp_err_to_name(err));
+        http_reset();
+        return false;
+    }
+
+    err = esp_http_client_perform(s_client);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "POST fail: %s", esp_err_to_name(err));
+        http_reset();
+        return false;
+    }
+
+    int code = esp_http_client_get_status_code(s_client);
+    if (code < 200 || code >= 300) {
+        ESP_LOGW(TAG, "POST HTTP %d", code);
+        http_reset();
+        return false;
+    }
+    return true;
+}
+
+/* ---------------- 上传任务（2Hz） ---------------- */
+
+static void upload_task(void *arg)
+{
+    uint32_t backoff_ms = UPLOAD_INTERVAL_MS;
+
+    while (1) {
+        if (s_wifi_connected) {
+            int total = 0;
+            float change = 0;
+            for (int i = 0; i < N_CH; i++) {
+                total += s_values[i];
+                change += fabsf((float)s_values[i] - s_ema[i]);
+            }
+            float contact = (float)total / CONTACT_FULL_SCALE;
+            if (contact > 1.0f) contact = 1.0f;
+            change /= CHANGE_FULL_SCALE;
+            if (change > 1.0f) change = 1.0f;
+
+            cJSON *root = cJSON_CreateObject();
+            cJSON_AddStringToObject(root, "device_id", DEVICE_ID);
+            cJSON_AddNumberToObject(root, "seq", (double)(s_seq++));
+            cJSON *zones = cJSON_AddArrayToObject(root, "pressure_zones");
+            for (int i = 0; i < N_CH; i++) {
+                cJSON_AddItemToArray(zones, cJSON_CreateNumber(s_values[s_zone_idx[i]]));
+            }
+            cJSON_AddNumberToObject(root, "pressure_contact", (double)(roundf(contact * 100) / 100));
+            cJSON_AddNumberToObject(root, "pressure_change", (double)(roundf(change * 100) / 100));
+            cJSON_AddNullToObject(root, "imu_motion");
+            cJSON_AddNullToObject(root, "temperature_c");
+            cJSON_AddNullToObject(root, "humidity_pct");
+            cJSON_AddNullToObject(root, "vibration_feedback");
+
+            char *body = cJSON_PrintUnformatted(root);
+            if (body) {
+                bool ok = http_post_json(body);
+                if (ok) {
+                    backoff_ms = UPLOAD_INTERVAL_MS;
+                } else {
+                    if (backoff_ms < 10000) backoff_ms *= 2;
+                }
+                ESP_LOGD(TAG, "%s", body);
+                cJSON_free(body);
+            }
+            cJSON_Delete(root);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(backoff_ms));
+    }
+}
+
+/* ---------------- 采样任务（10Hz） ---------------- */
+
+static void sample_task(void *arg)
+{
+    while (1) {
+        int raw[N_CH] = {0};
+        for (int i = 0; i < N_CH; i++) {
+            adc_oneshot_read(s_adc1, s_chans[i], &raw[i]);
+        }
+        int raw_eeg = 0;
+        adc_oneshot_read(s_adc1, EEG_CH, &raw_eeg);
+
+        /* ADS1120 读两个脑电波通道（SPI，单端 AIN0/AIN1） */
+        int16_t eeg2 = ads1120_read_channel(ADS1120_MUX_AIN0);
+        int16_t eeg3 = ads1120_read_channel(ADS1120_MUX_AIN1);
+
+        char line[128] = {0};
+        int off = 0;
+        for (int i = 0; i < N_CH; i++) {
+            if (!s_ema_init) s_ema[i] = (float)raw[i];
+            else s_ema[i] = s_ema[i] * 0.8f + (float)raw[i] * 0.2f;
+            int v = (int)lroundf(s_ema[i]);
+            if (v < (int)NOISE) v = 0;
+            s_values[i] = v;
+            off += snprintf(line + off, sizeof(line) - off, "%d ", v);
+        }
+        if (!s_ema_init) s_eeg_ema = (float)raw_eeg;
+        else s_eeg_ema = s_eeg_ema * 0.5f + (float)raw_eeg * 0.5f;
+        s_eeg = (int)lroundf(s_eeg_ema);
+        s_ema_init = true;
+        off += snprintf(line + off, sizeof(line) - off, "%d %d %d\n", s_eeg, eeg2, eeg3);
+
+        printf("%s", line);
+        fflush(stdout);
+
+        vTaskDelay(pdMS_TO_TICKS(SAMPLE_INTERVAL_MS));
+    }
+}
+
+/* ---------------- WiFi ---------------- */
+
+static void wifi_event_handler(void *arg, esp_event_base_t base, int32_t id, void *data)
+{
+    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
+        s_wifi_connected = false;
+        ESP_LOGW(TAG, "wifi 断开，重连 %s", WIFI_SSID);
+        esp_wifi_connect();
+    } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *evt = (ip_event_got_ip_t *)data;
+        s_wifi_connected = true;
+        ESP_LOGI(TAG, "WIFI_CONNECTED ip=" IPSTR, IP2STR(&evt->ip_info.ip));
+    }
+}
+
+static void wifi_init_sta(void)
+{
+    esp_netif_create_default_wifi_sta();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL));
+
+    wifi_config_t wc = {0};
+    strncpy((char *)wc.sta.ssid, WIFI_SSID, sizeof(wc.sta.ssid));
+    strncpy((char *)wc.sta.password, WIFI_PASS, sizeof(wc.sta.password));
+    wc.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wc));
+    ESP_ERROR_CHECK(esp_wifi_start());
+    ESP_LOGI(TAG, "正在连接 %s ...", WIFI_SSID);
+}
+
+/* ---------------- 按摩仪 BLE ---------------- */
+
+static void mac_str_to_bytes(const char *str, uint8_t out[6])
+{
+    unsigned int v[6] = {0};
+    sscanf(str, "%x:%x:%x:%x:%x:%x", &v[0], &v[1], &v[2], &v[3], &v[4], &v[5]);
+    for (int i = 0; i < 6; i++) {
+        out[i] = (uint8_t)v[i];
+    }
+}
+
+static void dump_hex(const char *tag, const uint8_t *data, uint16_t len)
+{
+    printf("%s: ", tag);
+    for (int i = 0; i < len; i++) {
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
+}
+
+static void massage_connect(void);
+
+static esp_err_t massage_send_frame(uint8_t cmd, uint8_t p3)
+{
+    if (!s_connected || s_fff2_handle == 0) {
+        ESP_LOGW(TAG_MASSAGE, "not ready (connected=%d fff2=0x%x)", s_connected, s_fff2_handle);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    uint8_t frame[6] = {FRAME_HEAD, cmd, 0x00, 0x00, p3, FRAME_TAIL};
+    dump_hex("[MASSAGE TX]", frame, sizeof(frame));
+
+    s_pending_cmd = cmd;
+    xEventGroupClearBits(s_ack_evt, ACK_BIT);
+
+    esp_err_t ret = esp_ble_gattc_write_char(s_gattc_if, s_conn_id, s_fff2_handle,
+                                             sizeof(frame), frame,
+                                             ESP_GATT_WRITE_TYPE_RSP,
+                                             ESP_GATT_AUTH_REQ_NONE);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG_MASSAGE, "write char failed 0x%x", ret);
+        return ret;
+    }
+
+    EventBits_t bits = xEventGroupWaitBits(s_ack_evt, ACK_BIT, pdTRUE, pdFALSE,
+                                           pdMS_TO_TICKS(ACK_TIMEOUT_MS));
+    if (bits & ACK_BIT) {
+        ESP_LOGI(TAG_MASSAGE, "ACK received");
+        return ESP_OK;
+    }
+    ESP_LOGW(TAG_MASSAGE, "ACK timeout");
+    return ESP_ERR_TIMEOUT;
+}
+
+static esp_err_t massage_set_intensity(uint8_t level)
+{
+    if (level < 1 || level > 5) {
+        ESP_LOGE(TAG_MASSAGE, "level out of range (1-5)");
+        return ESP_ERR_INVALID_ARG;
+    }
+    return massage_send_frame(CMD_INTENSITY, s_level_map[level]);
+}
+
+static esp_err_t massage_start(void)
+{
+    return massage_send_frame(CMD_START, 0x00);
+}
+
+static esp_err_t massage_stop(void)
+{
+    return massage_send_frame(CMD_STOP, 0x00);
+}
+
+static void massage_connect(void)
+{
+    if (s_connected || s_gattc_if == ESP_GATT_IF_NONE) {
+        return;
+    }
+    esp_ble_gatt_creat_conn_params_t p = {0};
+    mac_str_to_bytes(MASSAGE_TARGET_MAC, p.remote_bda);
+    p.remote_addr_type = MASSAGE_ADDR_TYPE;
+    p.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+    p.is_direct = true;
+    p.is_aux = false;
+    p.phy_mask = 0x0;
+    ESP_LOGI(TAG_MASSAGE, "connecting to " MASSAGE_TARGET_MAC " ...");
+    esp_err_t ret = esp_ble_gattc_enh_open(s_gattc_if, &p);
+    if (ret) {
+        ESP_LOGE(TAG_MASSAGE, "enh_open failed 0x%x", ret);
+    }
+}
+
+static void massage_connect_delayed(void *arg)
+{
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    massage_connect();
+    vTaskDelete(NULL);
+}
+
+static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
+                                        esp_ble_gattc_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_GATTC_REG_EVT:
+        ESP_LOGI(TAG_MASSAGE, "GATT client registered, gattc_if %d", gattc_if);
+        massage_connect();
+        break;
+
+    case ESP_GATTC_CONNECT_EVT:
+        s_conn_id = param->connect.conn_id;
+        ESP_LOGI(TAG_MASSAGE, "Connected, conn_id %d", s_conn_id);
+        esp_ble_gattc_send_mtu_req(gattc_if, s_conn_id);
+        break;
+
+    case ESP_GATTC_OPEN_EVT:
+        if (param->open.status != ESP_GATT_OK) {
+            ESP_LOGE(TAG_MASSAGE, "Open failed, status %d", param->open.status);
+            break;
+        }
+        s_connected = true;
+        ESP_LOGI(TAG_MASSAGE, "BLE link open, MTU %u", param->open.mtu);
+        esp_ble_gattc_search_service(gattc_if, s_conn_id, &s_srv_uuid);
+        break;
+
+    case ESP_GATTC_SEARCH_RES_EVT:
+        if (param->search_res.srvc_id.uuid.len == ESP_UUID_LEN_16 &&
+            param->search_res.srvc_id.uuid.uuid.uuid16 == SRV_UUID16) {
+            s_svc_start = param->search_res.start_handle;
+            s_svc_end = param->search_res.end_handle;
+            ESP_LOGI(TAG_MASSAGE, "FFF0 service found, handle [%d, %d]", s_svc_start, s_svc_end);
+        }
+        break;
+
+    case ESP_GATTC_SEARCH_CMPL_EVT: {
+        if (param->search_cmpl.status != ESP_GATT_OK) {
+            ESP_LOGE(TAG_MASSAGE, "Service search failed %d", param->search_cmpl.status);
+            break;
+        }
+        /* 找 FFF2（写） */
+        do {
+            uint16_t count = 0;
+            esp_gatt_status_t st = esp_ble_gattc_get_attr_count(
+                gattc_if, s_conn_id, ESP_GATT_DB_CHARACTERISTIC,
+                s_svc_start, s_svc_end, 0, &count);
+            if (st != ESP_GATT_OK || count == 0) break;
+            esp_gattc_char_elem_t *elems = calloc(count, sizeof(*elems));
+            if (!elems) break;
+            esp_bt_uuid_t uuid = {.len = ESP_UUID_LEN_16, .uuid = {.uuid16 = CHAR_TX_UUID16}};
+            st = esp_ble_gattc_get_char_by_uuid(gattc_if, s_conn_id,
+                                                s_svc_start, s_svc_end, uuid, elems, &count);
+            if (st == ESP_GATT_OK && count > 0) {
+                s_fff2_handle = elems[0].char_handle;
+                ESP_LOGI(TAG_MASSAGE, "FFF2 (write) handle 0x%x", s_fff2_handle);
+            }
+            free(elems);
+        } while (0);
+
+        /* 找 FFF1（notify）并注册 */
+        do {
+            uint16_t count = 0;
+            esp_gatt_status_t st = esp_ble_gattc_get_attr_count(
+                gattc_if, s_conn_id, ESP_GATT_DB_CHARACTERISTIC,
+                s_svc_start, s_svc_end, 0, &count);
+            if (st != ESP_GATT_OK || count == 0) break;
+            esp_gattc_char_elem_t *elems = calloc(count, sizeof(*elems));
+            if (!elems) break;
+            esp_bt_uuid_t uuid = {.len = ESP_UUID_LEN_16, .uuid = {.uuid16 = CHAR_RX_UUID16}};
+            st = esp_ble_gattc_get_char_by_uuid(gattc_if, s_conn_id,
+                                                s_svc_start, s_svc_end, uuid, elems, &count);
+            if (st == ESP_GATT_OK && count > 0 &&
+                (elems[0].properties & ESP_GATT_CHAR_PROP_BIT_NOTIFY)) {
+                s_fff1_handle = elems[0].char_handle;
+                ESP_LOGI(TAG_MASSAGE, "FFF1 (notify) handle 0x%x", s_fff1_handle);
+                uint8_t remote_bda[6];
+                mac_str_to_bytes(MASSAGE_TARGET_MAC, remote_bda);
+                esp_ble_gattc_register_for_notify(gattc_if, remote_bda, s_fff1_handle);
+            }
+            free(elems);
+        } while (0);
+        break;
+    }
+
+    case ESP_GATTC_REG_FOR_NOTIFY_EVT: {
+        if (param->reg_for_notify.status != ESP_GATT_OK) {
+            ESP_LOGE(TAG_MASSAGE, "Notify register failed %d", param->reg_for_notify.status);
+            break;
+        }
+        uint16_t count = 0;
+        esp_bt_uuid_t descr_uuid = {.len = ESP_UUID_LEN_16,
+                                    .uuid = {.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG}};
+        esp_ble_gattc_get_attr_count(gattc_if, s_conn_id, ESP_GATT_DB_DESCRIPTOR,
+                                     s_svc_start, s_svc_end, s_fff1_handle, &count);
+        if (count > 0) {
+            esp_gattc_descr_elem_t *descr = calloc(count, sizeof(*descr));
+            if (descr) {
+                esp_gatt_status_t st = esp_ble_gattc_get_descr_by_char_handle(
+                    gattc_if, s_conn_id, s_fff1_handle, descr_uuid, descr, &count);
+                if (st == ESP_GATT_OK && count > 0) {
+                    uint16_t notify_en = 1;
+                    esp_ble_gattc_write_char_descr(gattc_if, s_conn_id, descr[0].handle,
+                                                   sizeof(notify_en), (uint8_t *)&notify_en,
+                                                   ESP_GATT_WRITE_TYPE_RSP, ESP_GATT_AUTH_REQ_NONE);
+                }
+                free(descr);
+            }
+        }
+        break;
+    }
+
+    case ESP_GATTC_WRITE_DESCR_EVT:
+        s_ready = true;
+        ESP_LOGI(TAG_MASSAGE, "FFF1 Notify enabled, ready to control");
+        break;
+
+    case ESP_GATTC_NOTIFY_EVT: {
+        uint8_t *data = param->notify.value;
+        uint16_t len = param->notify.value_len;
+        dump_hex("[MASSAGE RX]", data, len);
+        if (len == 6 && data[0] == FRAME_HEAD && data[1] == CMD_ACK &&
+            data[5] == FRAME_TAIL && data[2] == s_pending_cmd) {
+            xEventGroupSetBits(s_ack_evt, ACK_BIT);
+        }
+        break;
+    }
+
+    case ESP_GATTC_WRITE_CHAR_EVT:
+        if (param->write.status != ESP_GATT_OK) {
+            ESP_LOGE(TAG_MASSAGE, "Write char failed %d", param->write.status);
+        }
+        break;
+
+    case ESP_GATTC_DISCONNECT_EVT:
+        s_connected = false;
+        s_ready = false;
+        s_fff1_handle = 0;
+        s_fff2_handle = 0;
+        ESP_LOGW(TAG_MASSAGE, "Disconnected, reason 0x%02x", param->disconnect.reason);
+        xTaskCreate(massage_connect_delayed, "reconnect", 2048, NULL, 5, NULL);
+        break;
+
+    default:
+        break;
+    }
+}
+
+static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if,
+                         esp_ble_gattc_cb_param_t *param)
+{
+    if (event == ESP_GATTC_REG_EVT) {
+        if (param->reg.status == ESP_GATT_OK) {
+            s_gattc_if = gattc_if;
+        } else {
+            ESP_LOGE(TAG_MASSAGE, "reg app failed, app_id %04x, status %d",
+                     param->reg.app_id, param->reg.status);
+            return;
+        }
+    }
+    gattc_profile_event_handler(event, gattc_if, param);
+}
+
+static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT:
+        ESP_LOGI(TAG_MASSAGE, "conn params update: int %d lat %d timeout %d",
+                 param->update_conn_params.conn_int,
+                 param->update_conn_params.latency,
+                 param->update_conn_params.timeout);
+        break;
+    default:
+        break;
+    }
+}
+
+/* ---------------- 串口命令 ---------------- */
+
+static void handle_command(char *line)
+{
+    while (*line == ' ' || *line == '\t') line++;
+    size_t len = strlen(line);
+    while (len && (line[len - 1] == '\n' || line[len - 1] == '\r' ||
+                   line[len - 1] == ' ' || line[len - 1] == '\t')) {
+        line[--len] = 0;
+    }
+    if (len == 0) return;
+
+    if (strcmp(line, "connect") == 0) {
+        massage_connect();
+    } else if (strcmp(line, "start") == 0) {
+        massage_start();
+    } else if (strcmp(line, "stop") == 0) {
+        massage_stop();
+    } else if (strncmp(line, "level", 5) == 0) {
+        int lv = atoi(line + 5);
+        massage_set_intensity((uint8_t)lv);
+    } else if (strcmp(line, "status") == 0) {
+        printf("connected=%d ready=%d fff1=0x%x fff2=0x%x\n",
+               s_connected, s_ready, s_fff1_handle, s_fff2_handle);
+    } else if (strcmp(line, "help") == 0) {
+        printf("commands: level <1-5> | start | stop | connect | status | help\n");
+    } else {
+        printf("unknown: %s\n", line);
+    }
+}
+
+/* ---------------- main ---------------- */
+
+void app_main(void)
+{
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);
+
+    /* ADC */
+    adc_oneshot_unit_init_cfg_t unit_cfg = {
+        .unit_id = ADC_UNIT_1,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&unit_cfg, &s_adc1));
+
+    adc_oneshot_chan_cfg_t chan_cfg = {
+        .atten = ADC_ATTEN_DB_12,
+        .bitwidth = ADC_BITWIDTH_12,
+    };
+    for (int i = 0; i < N_CH; i++) {
+        ESP_ERROR_CHECK(adc_oneshot_config_channel(s_adc1, s_chans[i], &chan_cfg));
+    }
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(s_adc1, EEG_CH, &chan_cfg)); /* 脑电波 GPIO8 */
+
+    /* ADS1120 SPI ADC（两个脑电波传感器） */
+    ads1120_init();
+
+    s_ack_evt = xEventGroupCreate();
+    assert(s_ack_evt);
+
+    /* WiFi */
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    wifi_init_sta();
+
+    /* BLE controller + bluedroid（WiFi + BLE 共存） */
+    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_bt_controller_init(&bt_cfg));
+    ESP_ERROR_CHECK(esp_bt_controller_enable(ESP_BT_MODE_BLE));
+    ESP_ERROR_CHECK(esp_bluedroid_init());
+    ESP_ERROR_CHECK(esp_bluedroid_enable());
+
+    ESP_ERROR_CHECK(esp_ble_gap_register_callback(esp_gap_cb));
+    ESP_ERROR_CHECK(esp_ble_gattc_register_callback(esp_gattc_cb));
+    ESP_ERROR_CHECK(esp_ble_gattc_app_register(0));
+    esp_ble_gatt_set_local_mtu(500);
+
+    ESP_LOGI(TAG, "PRESSURE+massage ready: 6ch ADC 10Hz, upload 2Hz -> %s", NX_URL);
+
+    xTaskCreate(sample_task, "sample", 4096, NULL, 5, NULL);
+    xTaskCreate(upload_task, "upload", 8192, NULL, 4, NULL);
+
+    /* 串口命令：level/start/stop/connect/status（压力数据由 sample_task 打印） */
+    usb_serial_jtag_driver_config_t jtag_cfg = {
+        .tx_buffer_size = 256,
+        .rx_buffer_size = 256,
+    };
+    ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&jtag_cfg));
+    usb_serial_jtag_vfs_use_driver();
+
+    char line[64];
+    int line_len = 0;
+    while (1) {
+        uint8_t ch;
+        int n = usb_serial_jtag_read_bytes(&ch, 1, pdMS_TO_TICKS(20));
+        if (n > 0) {
+            if (ch == '\n' || ch == '\r') {
+                if (line_len > 0) {
+                    line[line_len] = '\0';
+                    handle_command(line);
+                    line_len = 0;
+                }
+            } else if (line_len < (int)sizeof(line) - 1) {
+                line[line_len++] = (char)ch;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}

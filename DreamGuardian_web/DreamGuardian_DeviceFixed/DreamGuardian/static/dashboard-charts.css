@@ -1,0 +1,14 @@
+/* Full-width charts and horizontal legends replace the legacy side captions. */
+#view-dashboard .mini-chart-grid{gap:10px}
+#view-dashboard .mini-chart-grid figure.combined-waveform-card,#view-dashboard .eeg-wave-entry{padding:0!important;background:linear-gradient(180deg,rgba(12,29,44,.8),rgba(5,18,30,.85));border-color:rgba(139,177,207,.15);overflow:hidden}
+#view-dashboard .waveform-card figcaption.signal-legend{position:absolute;inset:9px 12px auto;transform:none;width:auto;display:flex!important;flex-direction:row;align-items:center;justify-content:flex-start;gap:18px!important;padding:0;background:none;backdrop-filter:none;line-height:18px;font-size:11px}
+#view-dashboard .signal-legend>span{gap:5px}
+#view-dashboard .signal-legend strong{font-size:14px;font-variant-numeric:tabular-nums}
+#view-dashboard .signal-legend small{font-size:10px}
+#view-dashboard .signal-legend em{display:none}
+#view-dashboard .waveform-card canvas{position:absolute;left:0;top:36px;width:100%;height:calc(100% - 36px)}
+#view-dashboard .eeg-wave-caption{left:12px;top:10px;padding:0;background:none;backdrop-filter:none;white-space:nowrap}
+#view-dashboard .eeg-wave-caption strong{font-size:14px;font-variant-numeric:tabular-nums}
+#view-dashboard .eeg-wave-caption em{font-size:10px}
+#view-dashboard .eeg-wave-entry .esp-entry-action{top:14px;right:12px}
+@media(max-width:1100px){#view-dashboard .waveform-card figcaption.signal-legend{gap:10px!important}#view-dashboard .signal-legend small{display:none}}

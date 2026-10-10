@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>睡姿实时监测</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    padding: 20px; max-width: 860px; margin: 0 auto;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  h1 { font-size: 22px; }
+  .status { font-size: 14px; color: #8b949e; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #f85149; margin-right: 6px; vertical-align: middle; }
+  .dot.ok { background: #3fb950; }
+
+  .pose-banner { text-align: center; padding: 22px 16px; border-radius: 14px; background: #161b22; border: 1px solid #30363d; margin-bottom: 16px; }
+  .pose-banner .pose { font-size: 38px; font-weight: 800; letter-spacing: 2px; }
+  .pose-banner .sub { font-size: 13px; color: #8b949e; margin-top: 8px; }
+
+  .pillow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #161b22; border: 1px solid #30363d; border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .pillow .row-label { grid-column: 1 / -1; text-align: center; font-size: 12px; color: #8b949e; letter-spacing: 6px; }
+  .cell { border-radius: 12px; padding: 14px 8px; text-align: center; border: 1px solid #30363d; transition: background .15s ease; }
+  .cell .pname { font-size: 13px; color: #c9d1d9; }
+  .cell .pval { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; }
+  .card .name { font-size: 13px; color: #8b949e; }
+  .card .val { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .bar { height: 8px; background: #21262d; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0%; border-radius: 5px; transition: width .15s ease; }
+
+  .chart-card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; }
+  .chart-card h2 { font-size: 15px; color: #8b949e; margin-bottom: 10px; font-weight: 600; }
+  canvas { width: 100%; height: 260px; display: block; }
+
+  .massage { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .massage h2 { font-size: 15px; color: #8b949e; margin-bottom: 12px; font-weight: 600; }
+  .m-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .m-row .lbl { font-size: 13px; color: #8b949e; min-width: 52px; }
+  .m-btn {
+    background: #21262d; color: #e6edf3; border: 1px solid #30363d;
+    border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer;
+    transition: background .12s ease, border-color .12s ease;
+  }
+  .m-btn:hover { background: #30363d; border-color: #8b949e; }
+  .m-btn:active { background: #484f58; }
+  .m-btn.lv { min-width: 40px; }
+  .m-btn.lv.on { background: #58a6ff; color: #0d1117; border-color: #58a6ff; }
+  .m-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .m-msg { font-size: 12px; color: #8b949e; min-height: 16px; }
+  .m-msg.err { color: #f85149; }
+  @media (max-width: 700px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛌 睡姿实时监测</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">连接中…</span></div>
+</header>
+
+<div class="pose-banner">
+  <div class="pose" id="poseText">离枕/无人</div>
+  <div class="sub" id="poseSub">等待数据…</div>
+</div>
+
+<div class="pillow" id="pillow"></div>
+
+<div class="grid" id="grid"></div>
+
+<div class="massage">
+  <h2>💆 按摩仪控制</h2>
+  <div class="m-row">
+    <span class="lbl">档位</span>
+    <button class="m-btn lv" data-lv="1">1</button>
+    <button class="m-btn lv" data-lv="2">2</button>
+    <button class="m-btn lv" data-lv="3">3</button>
+    <button class="m-btn lv" data-lv="4">4</button>
+    <button class="m-btn lv" data-lv="5">5</button>
+  </div>
+  <div class="m-row">
+    <span class="lbl">开关</span>
+    <button class="m-btn" id="btnStart">开始</button>
+    <button class="m-btn" id="btnStop">停止</button>
+  </div>
+  <div class="m-msg" id="mMsg"></div>
+</div>
+
+<div class="chart-card">
+  <h2>实时曲线（最近 60 秒）</h2>
+  <canvas id="cv"></canvas>
+</div>
+
+<script>
+const N = 6;        // 压力传感器 6 路
+const EEG = 6;      // 脑电波是第 7 路（下标 6）
+const NT = 7;       // 总路数（6 压力 + 1 脑电波）
+const MAXHIST = 300; // 历史点数（200ms 一个 = 60 秒）
+const COLORS = ["#58a6ff","#3fb950","#f0883e","#d2a8ff","#f85149","#39c5cf","#e6b800"];
+
+// 传感器编号(1-6) -> 枕头位置（按 2026-10-10 实机布局）
+const POS = ['右下','中下','左下','右上','左上','中上'];
+// 枕头热力图显示顺序（头朝上，上排=头部区/下排=颈部区），存的是"传感器编号-1"
+// 实机布局：上排 5 6 4  /  下排 3 2 1
+const PILLOW_ORDER = [4,5,3, 2,1,0];
+
+// ---- 判断阈值（传感器接好后按真实数据调这三个） ----
+const NOISE = 250;      // 读数低于此视为"无压力"（悬空噪声约 200）
+const PRESENCE = 600;   // 总压力低于此视为"离枕/无人"
+const SIDE_BIAS = 0.25; // 左右不对称度 |ratio| 超过此值判为侧卧（0~1）
+
+const POSE_STYLE = {
+  '平躺仰卧': '#3fb950',
+  '左侧卧':   '#58a6ff',
+  '右侧卧':   '#d2a8ff',
+  '离枕/无人': '#8b949e',
+};
+
+let hist = Array.from({length: NT}, () => []);
+
+// 生成枕头热力图
+const pillow = document.getElementById('pillow');
+pillow.innerHTML = '<div class="row-label">头 部 区</div>';
+PILLOW_ORDER.forEach((idx, i) => {
+  if (i === 3) {
+    const label = document.createElement('div');
+    label.className = 'row-label';
+    label.textContent = '颈 部 区';
+    pillow.appendChild(label);
+  }
+  const c = document.createElement('div');
+  c.className = 'cell';
+  c.id = 'pcell' + idx;
+  c.innerHTML = `<div class="pname">${idx + 1} · ${POS[idx]}</div><div class="pval" id="pval${idx}">0</div>`;
+  pillow.appendChild(c);
+});
+
+// 生成 6 张压力数值卡片 + 1 张脑电波卡片
+const grid = document.getElementById('grid');
+for (let i = 0; i < N; i++) {
+  const c = document.createElement('div');
+  c.className = 'card';
+  c.innerHTML = `<div class="name">传感器 ${i + 1} · ${POS[i]}</div>
+    <div class="val" id="v${i}">0</div>
+    <div class="bar"><i id="b${i}" style="background:${COLORS[i]}"></i></div>`;
+  grid.appendChild(c);
+}
+{
+  const c = document.createElement('div');
+  c.className = 'card';
+  c.innerHTML = `<div class="name">脑电波 🧠 · GPIO8</div>
+    <div class="val" id="v${EEG}">0</div>
+    <div class="bar"><i id="b${EEG}" style="background:${COLORS[EEG]}"></i></div>`;
+  grid.appendChild(c);
+}
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+function fitCanvas() {
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = r.width * dpr;
+  cv.height = r.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
+
+// 压力 -> 热力图颜色（蓝=无压 -> 红=高压），亮度压暗保证白字可读
+function heatColor(v, max) {
+  const t = Math.min(1, v / (max || 1));
+  const h = (1 - t) * 240;
+  return `hsl(${h}, 70%, ${20 + t * 25}%)`;
+}
+
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.width / dpr, H = cv.height / dpr;
+  ctx.clearRect(0, 0, W, H);
+  let mx = 1;
+  for (let s = 0; s < NT; s++) for (const x of hist[s]) if (x > mx) mx = x;
+  ctx.strokeStyle = '#21262d';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = H * i / 4;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  for (let s = 0; s < NT; s++) {
+    const d = hist[s];
+    if (d.length < 2) continue;
+    ctx.strokeStyle = COLORS[s];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < d.length; i++) {
+      const x = (i / (MAXHIST - 1)) * W, y = H - (d[i] / mx) * H;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+// 睡姿估计。注意左右是"面对面"视角：屏幕右 = 人的左。
+function estimatePose(v) {
+  const clean = v.map(x => x < NOISE ? 0 : x);
+  const left  = clean[4] + clean[2];  // 屏幕左 = 传感器5(左上)+3(左下)（人的右）
+  const right = clean[3] + clean[0];  // 屏幕右 = 传感器4(右上)+1(右下)（人的左）
+  const mid   = clean[5] + clean[1];  // 中间   = 传感器6(中上)+2(中下)
+  const total = left + right + mid;
+
+  if (total < PRESENCE) {
+    return { pose: '离枕/无人', sub: `总压力 ${Math.round(total)}，低于离枕阈值 ${PRESENCE}` };
+  }
+  const ratio = (right - left) / (left + right + 1);
+  let pose;
+  if (ratio > SIDE_BIAS) pose = '左侧卧';        // 压右边4,1 → 左脸贴枕
+  else if (ratio < -SIDE_BIAS) pose = '右侧卧';  // 压左边5,3 → 右脸贴枕
+  else pose = '平躺仰卧';
+  return {
+    pose,
+    sub: `左(${Math.round(left)}) · 中(${Math.round(mid)}) · 右(${Math.round(right)})   不对称度 ${(ratio * 100).toFixed(0)}%`,
+  };
+}
+
+async function tick() {
+  try {
+    const r = await fetch('/data', { cache: 'no-store' });
+    const j = await r.json();
+    const v = j.values;
+    document.getElementById('statusText').textContent = j.serial_ok ? '串口已连接' : '串口未连接';
+    document.getElementById('dot').className = 'dot' + (j.serial_ok ? ' ok' : '');
+
+    const maxVal = Math.max(...v, 1);
+
+    for (let i = 0; i < N; i++) {
+      const val = v[i] || 0;
+      document.getElementById('v' + i).textContent = Math.round(val);
+      document.getElementById('b' + i).style.width = Math.min(100, val / maxVal * 100) + '%';
+      hist[i].push(val);
+      if (hist[i].length > MAXHIST) hist[i].shift();
+    }
+    // 脑电波（第 7 路）
+    {
+      const val = v[EEG] || 0;
+      document.getElementById('v' + EEG).textContent = Math.round(val);
+      document.getElementById('b' + EEG).style.width = Math.min(100, val / maxVal * 100) + '%';
+      hist[EEG].push(val);
+      if (hist[EEG].length > MAXHIST) hist[EEG].shift();
+    }
+    for (let i = 0; i < N; i++) {
+      const val = v[i] || 0;
+      document.getElementById('pval' + i).textContent = Math.round(val);
+      document.getElementById('pcell' + i).style.background = heatColor(val, maxVal);
+    }
+
+    const est = estimatePose(v);
+    const pt = document.getElementById('poseText');
+    pt.textContent = est.pose;
+    pt.style.color = POSE_STYLE[est.pose] || '#e6edf3';
+    document.getElementById('poseSub').textContent = est.sub;
+
+    draw();
+  } catch (e) {
+    document.getElementById('statusText').textContent = '连接失败';
+    document.getElementById('dot').className = 'dot';
+  }
+}
+// ---- 按摩仪控制 ----
+const mMsg = document.getElementById('mMsg');
+let curLv = 0;
+let mNoteTimer = null;
+const lvBtns = document.querySelectorAll('.m-btn.lv');
+
+function mNote(text, isErr) {
+  mMsg.textContent = text;
+  mMsg.className = 'm-msg' + (isErr ? ' err' : '');
+  if (mNoteTimer) clearTimeout(mNoteTimer);
+  mNoteTimer = setTimeout(() => { mMsg.textContent = ''; mMsg.className = 'm-msg'; }, 4000);
+}
+
+async function sendCmd(cmd, label) {
+  mNote('发送: ' + (label || cmd) + ' …');
+  try {
+    const r = await fetch('/cmd', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cmd }),
+    });
+    const j = await r.json();
+    if (j.ok) mNote('✅ ' + (label || cmd) + ' 已发送');
+    else mNote('❌ ' + j.msg, true);
+  } catch (e) {
+    mNote('❌ 请求失败: ' + e, true);
+  }
+}
+
+document.getElementById('btnStart').addEventListener('click', () => sendCmd('start', '开始'));
+document.getElementById('btnStop').addEventListener('click', () => sendCmd('stop', '停止'));
+lvBtns.forEach(b => {
+  b.addEventListener('click', () => {
+    const lv = +b.dataset.lv;
+    curLv = lv;
+    lvBtns.forEach(x => x.classList.toggle('on', x === b));
+    sendCmd('level ' + lv, '档位 ' + lv);
+  });
+});
+
+setInterval(tick, 200);
+tick();
+</script>
+</body>
+</html>

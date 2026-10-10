@@ -1,0 +1,36 @@
+/* Preserve chart space by moving the notice into the heading. */
+#view-reports.view-panel:not([hidden]){grid-template-rows:55px 105px minmax(0,1fr)!important}
+#view-reports>.report-stats{grid-row:2!important}
+#view-reports>.report-body{grid-row:3!important}
+#view-reports .report-history{display:flex;align-items:center;gap:12px;position:relative}
+#view-reports .report-notice{max-width:260px;border:0;background:none;padding:0;font-size:12px;line-height:1.5;color:var(--muted)}
+#view-reports .assessment-panel{max-height:none!important;overflow:hidden!important;display:flex!important;flex-direction:column;gap:7px}
+#view-reports .assessment-panel .eyebrow{display:none}
+#view-reports .assessment-panel .panel-title{align-items:center;flex-wrap:wrap}
+#view-reports .assessment-panel p,#view-reports .assessment-panel li{font-size:16px;line-height:1.6;margin:0}
+#view-reports .assessment-panel h3{font-size:14px;margin:0}
+#view-reports .assessment-panel ul{padding-left:20px;margin:0}
+#report-assessment{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+#report-issues li,#report-suggestions li{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#report-issues:empty{display:none}
+#report-missing{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:11px;color:var(--muted)}
+.assessment-open{min-height:36px;padding:5px 10px;font-size:12px;flex-shrink:0}
+#view-timeline .session-assessment{gap:5px}
+#view-timeline .assessment-page{display:flex;flex-wrap:wrap;align-content:start;align-items:baseline;gap:4px 8px;overflow:hidden}
+#view-timeline .assessment-stats{width:100%;margin:2px 0;flex-shrink:0}
+#view-timeline .session-summary{width:100%;min-height:0}
+#view-timeline .session-summary p{margin:3px 0;font-size:13px;line-height:1.5;display:flex;gap:3px}
+#view-timeline .session-summary strong{flex-shrink:0}
+#view-timeline .session-summary span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+#view-timeline .assessment-open{align-self:flex-end;margin-top:auto;min-height:30px}
+.assessment-dialog{box-sizing:border-box;width:90%;max-width:1100px;height:88%;max-height:88%;padding:22px;border:1px solid var(--line);border-radius:20px;background:#0c2030;color:var(--text);overflow:hidden}
+.assessment-dialog[open]{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:18px}
+.assessment-dialog::backdrop{background:#020b16bd}
+.assessment-dialog header{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.assessment-dialog h2{margin:0;font-size:24px}
+.assessment-dialog button{min-height:48px;padding:8px 18px}
+.assessment-tabs{display:flex;gap:10px}
+.assessment-tabs [aria-selected=true]{background:#246075;border-color:#78dce8}
+.assessment-detail-body{min-height:0;overflow:auto;font-size:19px;line-height:1.9;overflow-wrap:anywhere}
+.assessment-detail-body p{margin:0 0 16px}
+@media(max-height:650px){#view-reports.view-panel:not([hidden]){grid-template-rows:40px 80px minmax(0,1fr)!important}#view-reports .report-notice{max-width:170px;font-size:10px}#view-reports .assessment-panel p,#view-reports .assessment-panel li{font-size:13px}#view-timeline .assessment-score{font-size:22px}#view-timeline .assessment-stats>div{padding:3px}#view-timeline .session-summary p{font-size:11px;line-height:1.25;margin:2px 0}#view-timeline .session-summary span{-webkit-line-clamp:1}#view-timeline .assessment-open{min-height:26px;padding:2px 8px}.assessment-dialog{padding:14px}.assessment-detail-body{font-size:16px}}

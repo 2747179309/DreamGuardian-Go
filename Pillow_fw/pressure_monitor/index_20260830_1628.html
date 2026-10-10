@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>压力传感器实时监测</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    padding: 20px;
+  }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  h1 { font-size: 22px; }
+  .status { font-size: 14px; color: #8b949e; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #f85149; margin-right: 6px; vertical-align: middle; }
+  .dot.ok { background: #3fb950; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px;
+  }
+  .card .name { font-size: 14px; color: #8b949e; margin-bottom: 8px; }
+  .card .val { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bar { height: 10px; background: #21262d; border-radius: 6px; margin-top: 12px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0%; border-radius: 6px; transition: width .15s ease; }
+  .chart-card { margin-top: 14px; background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 16px; }
+  .chart-card h2 { font-size: 15px; color: #8b949e; margin-bottom: 10px; font-weight: 600; }
+  canvas { width: 100%; height: 280px; display: block; }
+  @media (max-width: 700px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛌 压力传感器实时监测</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">连接中…</span></div>
+</header>
+
+<div class="grid" id="grid"></div>
+
+<div class="chart-card">
+  <h2>实时曲线（最近 60 秒）</h2>
+  <canvas id="cv"></canvas>
+</div>
+
+<script>
+const N = 6;
+const COLORS = ["#58a6ff","#3fb950","#f0883e","#d2a8ff","#f85149","#39c5cf"];
+const MAX = 300; // 历史点数（200ms 一个点 = 60 秒）
+let hist = Array.from({length: N}, () => []);
+
+// 建 6 张卡片
+const grid = document.getElementById("grid");
+for (let i = 0; i < N; i++) {
+  const c = document.createElement("div");
+  c.className = "card";
+  c.innerHTML = `<div class="name">传感器 ${i + 1}</div>
+    <div class="val" id="v${i}">0</div>
+    <div class="bar"><i id="b${i}" style="background:${COLORS[i]}"></i></div>`;
+  grid.appendChild(c);
+}
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+
+function fitCanvas() {
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = r.width * dpr;
+  cv.height = r.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+fitCanvas();
+window.addEventListener("resize", fitCanvas);
+
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.width / dpr;
+  const H = cv.height / dpr;
+  ctx.clearRect(0, 0, W, H);
+
+  // 动态量程：取所有历史数据最大值，自适应 0~4095 或 0~1023 都行
+  let mx = 1;
+  for (let s = 0; s < N; s++)
+    for (const x of hist[s]) if (x > mx) mx = x;
+
+  // 网格线
+  ctx.strokeStyle = "#21262d";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = (H * i) / 4;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // 6 条曲线
+  for (let s = 0; s < N; s++) {
+    const d = hist[s];
+    if (d.length < 2) continue;
+    ctx.strokeStyle = COLORS[s];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < d.length; i++) {
+      const x = (i / (MAX - 1)) * W;
+      const y = H - (d[i] / mx) * H;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+async function tick() {
+  try {
+    const r = await fetch("/data", { cache: "no-store" });
+    const j = await r.json();
+    const v = j.values;
+    document.getElementById("statusText").textContent = j.serial_ok ? "串口已连接" : "串口未连接";
+    document.getElementById("dot").className = "dot" + (j.serial_ok ? " ok" : "");
+
+    const maxVal = Math.max(...v, 1);
+    for (let i = 0; i < N; i++) {
+      const val = v[i] || 0;
+      document.getElementById("v" + i).textContent = Math.round(val);
+      document.getElementById("b" + i).style.width = Math.min(100, (val / maxVal) * 100) + "%";
+      hist[i].push(val);
+      if (hist[i].length > MAX) hist[i].shift();
+    }
+    draw();
+  } catch (e) {
+    document.getElementById("statusText").textContent = "连接失败";
+    document.getElementById("dot").className = "dot";
+  }
+}
+setInterval(tick, 200);
+tick();
+</script>
+</body>
+</html>

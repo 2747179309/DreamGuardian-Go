@@ -1,0 +1,1570 @@
+[
+  {
+    "pose": "pose--72",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--72",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--72",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--72",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--69",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--69",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--69",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--69",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--66",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--66",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--66",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--66",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--63",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--63",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--63",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--63",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--60",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--60",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--60",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--60",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--57",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--57",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--57",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--57",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--54",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--54",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--54",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--54",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--51",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--51",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--51",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--51",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--48",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--48",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--48",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--48",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--45",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--45",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--45",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--45",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--42",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--42",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--42",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--42",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--39",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--39",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--39",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--39",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--36",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--36",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--36",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--36",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--33",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--33",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--33",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--33",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--30",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--30",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--30",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--30",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--27",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--27",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--27",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--27",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--24",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--24",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--24",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--24",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--21",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--21",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--21",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--21",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--18",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--18",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--18",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--18",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--15",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--15",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--15",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--15",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--12",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--12",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--12",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--12",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--9",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--9",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--9",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--9",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--6",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--6",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--6",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--6",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--3",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--3",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--3",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose--3",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-0",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-0",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-0",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-0",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-3",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-3",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-3",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-3",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-6",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-6",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-6",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-6",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-9",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-9",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-9",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-9",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-12",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-12",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-12",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-12",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-15",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-15",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-15",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-15",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-18",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-18",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-18",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-18",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-21",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-21",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-21",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-21",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-24",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-24",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-24",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-24",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-27",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-27",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-27",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-27",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-30",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-30",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-30",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-30",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-33",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-33",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-33",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-33",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-36",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-36",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-36",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-36",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-39",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-39",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-39",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-39",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-42",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-42",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-42",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-42",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-45",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-45",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-45",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-45",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-48",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-48",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-48",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-48",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-51",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-51",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-51",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-51",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-54",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-54",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-54",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-54",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-57",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-57",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-57",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-57",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-60",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-60",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-60",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-60",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-63",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-63",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-63",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-63",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-66",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-66",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-66",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-66",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-69",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-69",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-69",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-69",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-72",
+    "pair": [
+      "leftLeg",
+      "rightLeg"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-72",
+    "pair": [
+      "leftArm",
+      "rightArm"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-72",
+    "pair": [
+      "leftArm",
+      "head"
+    ],
+    "intersections": 0
+  },
+  {
+    "pose": "pose-72",
+    "pair": [
+      "rightArm",
+      "head"
+    ],
+    "intersections": 0
+  }
+]

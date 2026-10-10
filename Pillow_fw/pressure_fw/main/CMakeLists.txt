@@ -1,0 +1,1 @@
+idf_component_register(SRCS "pressure_fw.c" INCLUDE_DIRS "." REQUIRES esp_adc esp_wifi esp_event esp_netif esp_http_client esp_http_server json nvs_flash bt esp_driver_usb_serial_jtag esp_driver_spi esp_driver_gpio)

@@ -1,0 +1,129 @@
+/* Same panels, grid tracks and navigation. Improve contrast and type at 100%. */
+:root{--muted:#b8d0d9;--text:#f4fbff}
+body{font-family:"Microsoft YaHei UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif}
+.sensor-card>em,.sensor-card>small,.state-list dt,.guardian-state span,.latest-event span,
+.event-item time,.event-item span,.event-detail>p,.capability-panel ul{color:#c0d5df}
+.heatmap-scale i,.twin-heat-legend i{background:linear-gradient(90deg,#103373,#2268d2 20%,#1dc0c9 42%,#85da81 62%,#ffce4d 80%,#f24934)}
+#view-twin .twin-zone-head{display:block}
+#view-twin .twin-zone-head b{display:block;white-space:pre-line;margin-top:5px;line-height:1.45;font-variant-numeric:tabular-nums}
+@media(max-width:1450px),(max-height:820px){
+  body{font-size:15px;font-weight:500}
+  .nav-button strong{font-size:15px;font-weight:700}
+  .eyebrow{color:#94ecf6;font-size:12px;letter-spacing:.12em}
+  .page-heading h1{font-size:23px}
+  .panel-title h2,.control-heading h2,.module-heading{font-size:17px;font-weight:700}
+  .sensor-card>span,.sensor-card>small,.sensor-card>em{font-size:13px;font-weight:500}
+  .sensor-card>strong{font-size:25px;font-weight:750}
+  .guardian-state span,.guardian-state strong,.dashboard-agent>p{font-size:13px}
+  .dashboard-agent>p{color:#c8dde6;line-height:1.4}
+  .source-tag,.scope-badge,.heading-meta span,.ai-health span{font-size:13px;color:#c7dde5}
+  .state-list dt,.state-list dd,.latest-event strong,.latest-event span{font-size:13px}
+  .heatmap-scale,.timeline-legend,.timeline-segment,figure figcaption{font-size:13px;font-weight:600;color:#c9dfe7}
+  .event-item time,.event-item span,.event-detail dt,.event-trace span{font-size:13px}
+  .event-detail dd,.event-trace strong{font-size:14px}
+  .report-notice,.control-notice,.health-card span,.health-card small,.control-card>p{font-size:13px}
+  .report-stats span,.report-stats small,.nx-grid span,.capability-panel li{font-size:13px}
+  .chat-message strong,.prompt-box label{font-size:14px}
+  #view-twin .twin-eyebrow{font-size:12px;color:#94ecf6;letter-spacing:.08em}
+  #view-twin .twin-inspector>p:not(.twin-eyebrow){font-size:14px;color:#c0d8e1;line-height:1.4}
+  #view-twin .twin-metrics span,#view-twin .twin-zone-head span,#view-twin .twin-zone-head b,
+  #view-twin .twin-light-control label,#view-twin .twin-light-control small{font-size:13px;color:#c5dce5}
+  #view-twin .twin-metrics b{font-size:18px}
+  #view-twin .twin-heat-legend{font-size:12px;color:#bdd8e4}
+  #view-twin .twin-status,#view-twin .twin-hint{font-size:13px}
+  #view-guard .guard-eyebrow{font-size:12px;color:#bcdbe5;letter-spacing:.1em}
+  #view-guard .guard-head small,#view-guard .guard-badge,#view-guard .guide-control span,
+  #view-guard .guard-metrics span,#view-guard .guard-metrics small,
+  #view-guard .guard-details div,#view-guard .model-details div,
+  #view-guard .model-head span,#view-guard .model-badge,#view-guard .model-metrics span,
+  #view-guard .model-metrics small,#view-guard .model-warning,
+  #view-guard .risk-mark,#view-guard .risk-track em{font-size:13px;line-height:1.4}
+  #view-guard .guard-metrics span,#view-guard .guard-metrics small,
+  #view-guard .guard-details dt,#view-guard .model-details dt,
+  #view-guard .model-metrics span,#view-guard .model-metrics small,
+  #view-guard .guide-control span,#view-guard .risk-mark,#view-guard .risk-track em{color:#bdd6e0}
+  #view-guard .guide-control strong,#view-guard .toggle b{font-size:14px}
+  #view-guard .guard-metrics b{font-size:19px}
+  #view-guard .model-metrics b{font-size:25px}
+  #view-guard .model-warning{color:#ffe096}
+}
+
+/* Dashboard cards have explicit text rows: label, reading/unit, status.
+   Do not let intrinsic grid rows collapse when browser chrome reduces height. */
+#view-dashboard .sensor-card{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:20px 30px 20px;align-content:center;column-gap:3px;row-gap:0;padding:5px 9px;min-height:82px}
+#view-dashboard .sensor-card>span{grid-row:1;grid-column:1/-1;font-size:15px;line-height:20px;white-space:nowrap;margin:0}
+#view-dashboard .sensor-card>strong{grid-row:2;grid-column:1;font-size:26px;line-height:30px;align-self:center;margin:0;white-space:nowrap}
+#view-dashboard .sensor-card>small{grid-row:2;grid-column:2;font-size:13px;line-height:18px;align-self:end;margin:0;padding:0 0 3px}
+#view-dashboard .sensor-card>em{grid-row:3;grid-column:1/-1;font-size:14px;line-height:20px;margin:0;white-space:nowrap}
+#view-dashboard .sensor-card>strong:has(#temperature){font-size:23px;letter-spacing:-.4px}
+#view-dashboard .mini-chart-grid figure.waveform-card{position:relative;padding:0}
+#view-dashboard .waveform-card figcaption{left:8px;top:50%;transform:translateY(-50%);width:94px;line-height:15px;font-size:14px;display:flex;flex-direction:column;color:#d8edf3}
+#view-dashboard .waveform-card figcaption small{font-size:12px;font-weight:500}
+#view-dashboard .waveform-card figcaption strong{font-size:19px;line-height:18px;color:#f3fcff}
+#view-dashboard .waveform-card canvas{position:absolute;left:106px;top:0;width:calc(100% - 106px);height:100%}
+.wave-window{font-size:14px;font-weight:500;color:#c8e2eb;white-space:nowrap}
+@media(max-width:1450px),(max-height:820px){
+  .page-heading h1{font-size:24px}
+  .panel-title h2,.control-heading h2,.module-heading{font-size:18px}
+  .nav-button strong{font-size:15px}
+  .guardian-state span,.guardian-state strong,.dashboard-agent>p{font-size:14px;line-height:19px}
+  .guardian-state strong{margin-top:0}
+  #view-dashboard .dashboard-agent{padding:5px 5px 2px}
+  #view-dashboard .dashboard-agent h2{font-size:25px;margin:2px 0 5px}
+  #view-dashboard .dashboard-agent>p{margin:4px 0 5px}
+  #view-dashboard .guardian-state div{padding:4px 6px}
+  .state-list dt,.state-list dd,.control-card>p,.health-card span,.nx-grid span{font-size:14px}
+  #view-twin .twin-inspector h3{font-size:22px;line-height:1.1}
+  #view-twin .twin-metrics b{font-size:20px;line-height:1.1}
+  #view-guard .guard-metrics b{font-size:20px}
+  #view-guard .model-metrics b{font-size:27px}
+}
+@media(max-height:640px){
+  #view-dashboard.view-panel:not([hidden]){grid-template-rows:40px 174px minmax(0,1fr)}
+  #view-dashboard .sensor-grid{row-gap:8px}
+  #view-dashboard .panel-title h2{font-size:17px}
+  #view-dashboard .trend-panel,#view-dashboard .pressure-panel{padding:8px}
+  #view-dashboard .panel-title .eyebrow{font-size:11px}
+  #view-dashboard .mini-chart-grid{gap:4px;margin-top:4px}
+  #view-dashboard .guardian-state{gap:4px}
+  .wave-window{font-size:13px}
+}
+@media(max-width:1100px){.nav-button strong{font-size:14px}}
+@media(max-height:640px){
+  .page-heading h1{font-size:22px}
+  .panel-title h2,.control-heading h2,.module-heading{font-size:16px}
+  .sensor-card>strong{font-size:24px}
+  .sensor-card>em{margin-top:2px}
+  .guardian-state div{padding:4px 6px}
+  .health-card{padding:7px}
+  .health-card small{margin-top:3px}
+  #view-twin .twin-inspector{gap:3px;padding:8px 10px}
+  #view-twin .twin-inspector>*{flex-shrink:0}
+  #view-twin .twin-inspector>p:not(.twin-eyebrow){line-height:1.3}
+  #view-twin .twin-metrics{gap:4px}
+  #view-twin .twin-metrics article{padding:3px 8px}
+  #view-twin .twin-metrics b{margin-top:2px}
+  #view-twin .twin-zone-block{padding:5px 8px}
+  #view-twin .twin-zone-head b{margin-top:2px}
+  #view-twin .twin-heat-legend{margin-top:5px}
+  #view-guard .guard-panel,#view-guard .model-panel{padding:7px}
+  #view-guard .guard-head strong{font-size:21px}
+  #view-guard .guard-head{margin-bottom:4px}
+  #view-guard .guard-head strong{margin:1px 0}
+  #view-guard .guard-head>div:first-child{display:grid;gap:1px}
+  #view-guard .guard-head .guard-eyebrow{line-height:1;font-size:12px}
+  #view-guard .guard-head strong{line-height:1.1;margin:0}
+  #view-guard .guard-head small{line-height:1.25}
+  #view-guard .guide-control{padding:5px 7px;margin-bottom:5px}
+  #view-guard .guide-control span{margin-top:1px}
+  #view-guard .guard-metrics{gap:5px}
+  #view-guard .guard-metrics article{padding:5px 6px}
+  #view-guard .guard-metrics b{margin:2px 0;font-size:18px}
+  #view-guard .guard-details div,#view-guard .model-details div{padding:3px 0;gap:6px}
+  #view-guard .guard-details dd{line-height:1.35}
+  #view-guard .guard-risk-track{margin:7px 4px 20px}
+  #view-guard .model-head strong{font-size:15px}
+  #view-guard .model-metrics article{padding:6px}
+  #view-guard .model-metrics b{margin:3px 0}
+  #view-guard .risk-track{margin:14px 4px 30px}
+}

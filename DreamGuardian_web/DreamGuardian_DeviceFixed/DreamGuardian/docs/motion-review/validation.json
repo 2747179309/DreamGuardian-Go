@@ -1,0 +1,9 @@
+{
+  "sampledPoses": 145,
+  "reversePoses": 145,
+  "minClearance": 0.0020019820164930424,
+  "maxHeadGap": 0.00525849917844301,
+  "maxSafetyLift": 0,
+  "maxJointStepPerDegree": 0.034538932044609,
+  "averagePoseMs": 12.790483448275863
+}

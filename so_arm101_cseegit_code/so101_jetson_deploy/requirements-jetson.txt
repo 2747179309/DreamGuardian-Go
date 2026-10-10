@@ -1,0 +1,26 @@
+# ==========================================================
+# SO-ARM101 Jetson 纯净 ACT 策略部署依赖清单
+# ==========================================================
+# 注意:
+# 1. Jetson aarch64 上的 PyTorch 与 Torchvision 必须使用 NVIDIA 官方 Wheel 安装，
+#    才能启用 GPU CUDA 加速（如果直接 pip install torch 会装成 CPU 版本）。
+#    安装命令详见 DEPLOY_GUIDE_JETSON.md。
+# ==========================================================
+
+# 1. 机械臂总线与舵机底层通信
+feetech-servo-sdk>=1.0.0
+pyserial>=3.5
+
+# 2. 模型推理与权重解析
+safetensors>=0.4.0
+einops>=0.8.0
+timm>=0.9.0
+draccus>=0.8.0
+huggingface-hub>=0.23.0
+
+# 3. 数据与图像处理
+opencv-python-headless>=4.8.0
+av>=11.0.0
+jsonlines>=4.0.0
+packaging>=24.0
+termcolor>=2.4.0

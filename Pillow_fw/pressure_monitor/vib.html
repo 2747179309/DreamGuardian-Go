@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>震动控制</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 20px;
+  }
+  h1 { font-size: 20px; margin-bottom: 24px; }
+  .row { display: flex; gap: 48px; }
+  .box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .btn {
+    width: 160px; height: 160px; border-radius: 50%;
+    border: 3px solid #30363d; background: #161b22; color: #e6edf3;
+    font-size: 28px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s; user-select: none;
+  }
+  .btn.on { background: #f85149; border-color: #f85149; color: #fff; box-shadow: 0 0 30px rgba(248,81,73,.5); }
+  .label { font-size: 14px; color: #8b949e; }
+  .state { margin-top: 24px; font-size: 14px; color: #8b949e; }
+  a.back { color: #58a6ff; text-decoration: none; font-size: 13px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<h1>🔊 震动模块控制</h1>
+<div class="row">
+  <div class="box">
+    <button class="btn" id="btn17" onclick="toggle(17)">关</button>
+    <div class="label">GPIO 17</div>
+  </div>
+  <div class="box">
+    <button class="btn" id="btn40" onclick="toggle(40)">关</button>
+    <div class="label">GPIO 40</div>
+  </div>
+</div>
+<div class="state" id="state">17：关　|　40：关</div>
+<a class="back" href="/">← 返回睡姿监测</a>
+
+<script>
+let on = {17: false, 40: false};
+async function send(cmd) {
+  try {
+    const r = await fetch('/cmd', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd: cmd})
+    });
+    return await r.json();
+  } catch (e) { return {ok: false, msg: String(e)}; }
+}
+function updateState() {
+  document.getElementById('state').textContent =
+    '17：' + (on[17] ? '震动中' : '关') + '　|　40：' + (on[40] ? '震动中' : '关');
+}
+async function toggle(pin) {
+  on[pin] = !on[pin];
+  const cmd = pin === 17 ? (on[pin] ? 'vib on' : 'vib off')
+                          : (on[pin] ? 'vib2 on' : 'vib2 off');
+  const res = await send(cmd);
+  const btn = document.getElementById('btn' + pin);
+  btn.textContent = on[pin] ? '开' : '关';
+  btn.className = 'btn' + (on[pin] ? ' on' : '');
+  updateState();
+  if (!res.ok) {
+    document.getElementById('state').textContent += '（' + pin + '发送失败：' + res.msg + '）';
+  }
+}
+</script>
+</body>
+</html>

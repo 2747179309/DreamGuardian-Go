@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#06101b">
+  <title>DreamGuardian NX 睡眠守护平台</title>
+  <link rel="stylesheet" href="/static/style.css?v=21">
+  <link rel="stylesheet" href="/static/sleep-modules.css?v=2">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/readability.css?v=3">
+<link rel="stylesheet" href="/static/xiaomeng.css?v=4">
+<link rel="stylesheet" href="/static/eeg-details.css?v=2">
+<link rel="stylesheet" href="/static/dashboard-charts.css?v=1">
+<link rel="stylesheet" href="/static/sleep-timeline.css?v=3">
+<link rel="stylesheet" href="/static/visual-refinements.css?v=2">
+<link rel="stylesheet" href="/static/timeline-fit.css?v=resting-slow-20260924">
+<script src="/static/display-scale.js?v=1"></script>
+<link rel="stylesheet" href="/static/assessment-detail.css?v=resting-slow-20260924"><link rel="stylesheet" href="/static/signal-details.css?v=resting-slow-20260924"><link rel="stylesheet" href="/static/detail-links.css?v=resting-slow-20260924"></head>
+<body data-edition="monitor">
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"><i></i><i></i><i></i></span><span><strong>DreamGuardian</strong><small>NX 睡眠守护平台</small></span></div>
+    <div class="top-status">
+      <div class="status-chip" id="transport-chip" data-state="pending"><i></i><span>链路</span><strong id="transport-status">连接中</strong></div>
+      <div class="status-chip" id="device-chip" data-state="pending"><i></i><span>DG</span><strong id="device-status">检查中</strong></div>
+      <div class="status-chip data-age-chip"><span>更新</span><strong id="data-age">--</strong></div>
+      <time id="clock">--:--:--</time>
+      <button class="settings-button fullscreen-button" id="fullscreen-button" type="button" aria-label="进入全屏" aria-pressed="false"><span aria-hidden="true">⛶</span><strong>全屏</strong></button>
+      <button class="settings-button" id="settings-button" type="button" aria-haspopup="dialog" aria-controls="settings-dialog"><span aria-hidden="true">⚙</span><strong>设置</strong></button>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+    <nav class="main-nav" aria-label="检测版导航">
+      <button class="nav-button active" type="button" data-view="dashboard"><span>01</span><strong>实时检测</strong></button>
+      <button class="nav-button" type="button" data-view="twin"><span>02</span><strong>卧室数字孪生</strong></button>
+      <button class="nav-button" type="button" data-view="timeline"><span>03</span><strong>睡眠时间轴</strong></button>
+      <button class="nav-button" type="button" data-view="reports"><span>04</span><strong>历史报告</strong></button>
+      <button class="nav-button" type="button" data-view="ai"><span>05</span><strong>AI 小梦</strong></button>
+      <button class="nav-button" type="button" data-view="control"><span>06</span><strong>设备控制</strong></button>
+      <button class="nav-button" type="button" data-view="system"><span>07</span><strong>系统状态</strong></button>
+    </nav>
+    <div class="sidebar-foot"><span>LOCAL</span><p>本地运行 · 数据不出 NX</p></div>
+  </aside>
+
+  <main class="workspace" id="workspace">
+    <section class="view-panel personal-view" id="view-personal" data-panel="personal" hidden>
+      <header class="page-heading compact-heading"><div><p class="eyebrow">GOOD NIGHT</p><h1>今晚，由小梦守护</h1></div><div class="personal-status"><span class="sleep-dot"></span><strong id="personal-sleep-state">等待睡眠数据</strong><small id="personal-sample-time">采样时间 --</small></div></header>
+      <div class="personal-grid">
+        <article class="panel personal-guardian">
+          <div class="avatar-stage" id="avatar-stage" data-mode="wait"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><img class="xiaomeng" src="/static/xiaomeng/wait.png" alt="虚拟睡眠助手小梦"><div class="avatar-glow"></div><div class="voice-ripples"><i></i><i></i><i></i><i></i></div></div>
+          <div class="agent-info"><div><p class="eyebrow">DREAMGUARDIAN AI</p><h2>小梦</h2></div><div class="voice-current"><span class="mode-dot"></span><strong id="voice-mode">等待</strong></div><p id="voice-detail">等待唤醒词：嗨，小梦</p><div class="mode-list"><span data-voice-mode="wake">唤醒</span><span data-voice-mode="wait" class="active">等待</span><span data-voice-mode="listen">收听</span><span data-voice-mode="answer">回答</span></div></div>
+        </article>
+        <section class="personal-overview">
+          <article class="personal-score panel"><span>当前睡眠评分</span><strong id="personal-score">--</strong><small>/ 100</small><p id="personal-score-note">等待有效数据</p></article>
+          <div class="personal-vitals">
+            <article class="metric-card"><span>心率</span><div><strong id="personal-heart">--</strong><small>BPM</small></div></article>
+            <article class="metric-card"><span>呼吸</span><div><strong id="personal-breath">--</strong><small>次/分</small></div></article>
+            <article class="metric-card"><span>体动</span><div><strong id="personal-motion">--</strong><small>强度</small></div></article>
+            <article class="metric-card"><span>在床状态</span><div><strong id="personal-presence">--</strong></div></article>
+          </div>
+          <article class="panel intervention-strip"><span>实时守护</span><strong id="personal-intervention">等待设备状态</strong><small id="personal-missing">缺失指标：--</small></article>
+        </section>
+      </div>
+      <section class="personal-controls">
+        <article class="control-card panel" data-control-card="brightness"><div class="control-heading"><div><p class="eyebrow">LIGHT</p><h2>灯光</h2></div><strong data-confirmed-value="brightness">--%</strong></div><div class="slider-row"><button type="button" data-action="light_off" disabled>关闭</button><input type="range" min="0" max="100" value="0" data-range="brightness" disabled aria-label="灯光亮度"><output data-preview="brightness">--</output><button type="button" data-action="light_on" disabled>开启</button></div><p data-command-status="brightness">等待 NX 返回设备状态</p></article>
+        <article class="control-card panel" data-control-card="volume"><div class="control-heading"><div><p class="eyebrow">VOLUME</p><h2>音量</h2></div><strong data-confirmed-value="volume">--%</strong></div><div class="slider-row"><button type="button" data-action="mute" disabled>静音</button><input type="range" min="0" max="100" value="0" data-range="volume" disabled aria-label="助眠音量"><output data-preview="volume">--</output><button type="button" data-action="unmute" disabled>恢复</button></div><p data-command-status="volume">等待 NX 返回设备状态</p></article>
+        <article class="control-card panel scene-card" data-control-card="scene"><div class="control-heading"><div><p class="eyebrow">SOUND SCENE</p><h2>助眠声音</h2></div><strong data-playback-state>未连接</strong></div><div class="scene-row"><select data-scene-select disabled><option value="">等待场景列表</option></select><button type="button" data-action="play" disabled>播放</button><button type="button" data-action="pause" disabled>暂停</button></div><p data-command-status="scene">当前场景：<span data-current-scene>--</span></p></article>
+      </section>
+    </section>
+
+    <section class="view-panel monitor-view active" id="view-dashboard" data-panel="dashboard">
+      <header class="page-heading"><div><p class="eyebrow">MULTIMODAL MONITOR</p><h1>多模态实时检测</h1></div><div class="heading-meta"><span id="sample-seq">帧序号 --</span><span id="sample-time">采样时间 --</span></div></header>
+      <article class="panel dashboard-guardian">
+        <div class="guardian-state"><div><span>睡眠阶段</span><strong id="guardian-sleep-state">--</strong></div><div><span>守护状态</span><strong id="guardian-assist-state">--</strong></div><div><span>数据完整性</span><strong id="guardian-data-state">等待数据</strong></div></div>
+        <div class="dashboard-avatar avatar-stage" id="monitor-avatar-stage" data-mode="wait"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><img class="xiaomeng" src="/static/xiaomeng/wait.png" alt="虚拟睡眠助手小梦"><div class="avatar-glow"></div><div class="voice-ripples"><i></i><i></i><i></i><i></i></div></div>
+        <div class="dashboard-agent"><div><p class="eyebrow">DREAMGUARDIAN AI</p><h2>小梦</h2></div><div class="voice-current"><span class="mode-dot"></span><strong id="monitor-voice-mode">等待</strong></div><p id="monitor-voice-detail">等待唤醒词：嗨，小梦</p></div>
+      </article>
+      <section class="sensor-grid">
+        <article class="sensor-card"><span>毫米波心率</span><strong id="heart">--</strong><small>BPM</small><em id="heart-note">等待数据</em></article>
+        <article class="sensor-card"><span>毫米波呼吸</span><strong id="breath">--</strong><small>次/分</small><em id="breath-note">等待数据</em></article>
+        <article class="sensor-card"><span>Wi-Fi CSI 体动</span><strong id="motion">--</strong><small id="motion-unit">强度</small><em id="motion-note">等待数据</em></article>
+        <article class="sensor-card"><span>翻身次数</span><strong id="turn-count">--</strong><small>次</small><em id="turn-note">接口未接入</em></article>
+        <article class="sensor-card"><span>MEMS 鼾声</span><strong id="snore-count">--</strong><small>次</small><em id="snore-state">等待数据</em></article>
+        <article class="sensor-card"><span>枕压变化</span><strong id="pressure-delta">--</strong><small>Δ</small><em id="pressure-note">接口未接入</em></article>
+        <article class="sensor-card"><span>温度 / 湿度</span><strong><b id="temperature">--</b><i>/</i><b id="humidity">--</b></strong><small>°C / %RH</small><em id="environment-note">接口未接入</em></article>
+        <article class="sensor-card"><span>皮肤电导</span><strong id="skin-conductance">--</strong><small>µS</small><em id="skin-note">接口未接入</em></article>
+      </section>
+      <div class="monitor-lower">
+        <article class="panel pressure-panel"><div class="panel-title"><div><p class="eyebrow">PILLOW PRESSURE</p><h2>枕头压力热力图</h2></div><span id="pressure-source" class="source-tag">未接入</span></div><div class="heatmap-wrap"><canvas id="pressure-heatmap" role="img" title="上排 P1、P2、P3；下排 P4、P5、P6。连续色场为估算，冷色低压、暖色高压。"></canvas><div id="heatmap-empty" class="chart-empty">等待 pressure_matrix 数据</div></div><div class="pressure-orientation"><span>← 枕头左侧</span><span>枕头右侧 →</span></div><div class="heatmap-scale"><span>低压</span><i></i><span>高压</span></div><p class="pressure-explanation">上排 P1–P3 · 下排 P4–P6<br>圆点为实际测点，连续色场为六点压力估算。</p></article>
+        <article class="panel trend-panel"><div class="panel-title"><div><p class="eyebrow">REAL-TIME SIGNALS</p><h2>实时动态趋势 <small class="wave-window">近 30 秒 · 归一化叠加</small></h2></div><button type="button" id="signal-details-open" class="source-tag dashboard-detail-link" aria-haspopup="dialog" aria-controls="signal-details">查看详情 ›</button></div><div class="mini-chart-grid"><figure class="waveform-card combined-waveform-card"><figcaption class="signal-legend"><span data-signal="heart">心率 <small>BPM</small> <strong id="trend-heart-value">--</strong> <em id="trend-heart-range">--</em></span><span data-signal="breath">呼吸 <small>次/分</small> <strong id="trend-breath-value">--</strong> <em id="trend-breath-range">--</em></span><span data-signal="motion">体动 <small>强度</small> <strong id="trend-motion-value">--</strong> <em id="trend-motion-range">--</em></span></figcaption><canvas id="trend-signals" aria-label="最近30秒心率、呼吸与体动归一化变化叠加图"></canvas></figure><button class="waveform-card eeg-wave-entry" id="esp-entry-card" type="button" data-open-view="esp" aria-controls="view-esp" aria-label="打开脑电数据详情页面"><span class="eeg-wave-caption"><span>原始脑电波形 <small id="eeg-unit">µV</small></span><strong id="trend-eeg-value">--</strong><em id="trend-eeg-range">等待数据</em></span><canvas id="trend-eeg" aria-hidden="true"></canvas><b class="esp-entry-action dashboard-detail-link">查看详情 ›</b></button></div></article>
+        <article class="panel state-panel"><div class="panel-title"><div><p class="eyebrow">CURRENT STATE</p><h2>判断与干预</h2></div><span class="live-badge" id="live-badge">等待数据</span></div><dl class="state-list"><div><dt>睡眠阶段</dt><dd id="sleep-state">--</dd></div><div><dt>干预状态</dt><dd id="assist-state">--</dd></div><div><dt>人体状态</dt><dd id="presence">--</dd></div><div><dt>雷达相位</dt><dd id="radar-state">--</dd></div><div><dt>CSI 稳定度</dt><dd id="csi-stability">--</dd></div><div><dt>异常模型</dt><dd id="model-state">--</dd></div></dl><div class="latest-event"><span>最新动作</span><strong id="latest-event">暂无事件</strong></div></article>
+      </div>
+    </section>
+
+    <section class="view-panel monitor-view" id="view-twin" data-panel="twin" hidden>
+      <header class="page-heading"><div><p class="eyebrow">BEDROOM DIGITAL TWIN</p><h1>卧室数字孪生</h1></div><span class="source-tag">三维交互 · 实时映射</span></header>
+      <section class="twin-panel" id="twin-panel" aria-label="卧室三维数字孪生">
+  <div class="twin-stage" id="twin-canvas" role="application" aria-label="可旋转、缩放和点击的卧室三维模型">
+    <div class="twin-loading" id="twin-loading"><i></i><strong>正在加载卧室模型</strong><span>bedroom.glb</span></div>
+    <div class="twin-status" id="twin-status">模型准备中</div>
+    <div class="twin-hint">单指旋转 · 双指缩放 · 点击查看设备</div>
+  </div>
+  <aside class="twin-inspector" aria-live="polite">
+    <p class="twin-eyebrow">INTERACTIVE DIGITAL TWIN</p>
+    <h3 id="twin-title">卧室全景</h3>
+    <p id="twin-description">点击枕头、人体或床头灯，查看对应传感器与设备状态。</p>
+    <div class="twin-metrics">
+      <article><span id="twin-metric-label-1">模型状态</span><b id="twin-metric-value-1">加载中</b></article>
+      <article><span id="twin-metric-label-2">实时数据</span><b id="twin-metric-value-2">等待连接</b></article>
+      <article><span id="twin-metric-label-3">交互对象</span><b id="twin-metric-value-3">--</b></article>
+    </div>
+    <div class="twin-zone-block" id="twin-zone-block">
+      <div class="twin-zone-head"><span>枕压分布 · 六点估算</span><b id="twin-zone-summary">等待压力数据</b></div>
+      <div class="twin-heat-legend"><i></i><span>低</span><span>中</span><span>高</span></div>
+    </div>
+    <div class="twin-light-control" id="twin-light-control" hidden>
+      <label for="twin-light-slider"><span>床头灯亮度预览</span><b id="twin-light-value">45%</b></label>
+      <input id="twin-light-slider" type="range" min="0" max="100" value="45">
+      <small>仅预览灯光，不控制真实设备。</small>
+    </div>
+    <div class="twin-light-control" id="twin-volume-control" data-control-card="volume" hidden>
+      <label for="twin-volume-slider"><span>小梦音量</span><b data-confirmed-value="volume">--%</b></label>
+      <input id="twin-volume-slider" type="range" min="0" max="100" value="0" data-range="volume" disabled aria-label="小梦音量">
+      <output data-preview="volume">--</output>
+      <div class="control-actions"><button type="button" data-action="mute" disabled>静音</button><button type="button" data-action="unmute" disabled>恢复</button></div>
+      <p data-command-status="volume">等待设备返回值</p>
+    </div>
+    <div class="twin-actions" aria-label="三维视角快捷操作">
+      <button type="button" data-twin-focus="room">全景</button>
+      <button type="button" data-twin-focus="pillow">枕头</button>
+      <button type="button" data-twin-focus="person">人体</button>
+      <button type="button" data-twin-focus="lamp">床头灯</button>
+      <button type="button" data-twin-focus="xiaomeng">小梦设备</button>
+    </div>
+  </aside>
+</section>
+    </section>
+    <section class="view-panel monitor-view" id="view-guard" data-panel="guard" hidden>
+      <header class="page-heading"><div><p class="eyebrow">DEEP SLEEP GUARD</p><h1>深睡守护</h1></div><button type="button" data-open-view="dashboard">← 返回首页</button><span class="source-tag" id="guard-data-status">等待实时数据</span></header>
+      <div class="guard-layout"><div class="guard-column"><h2 class="module-heading">深睡守护与干预</h2><section class="guard-panel" id="guard-panel" data-state="off" aria-live="polite">
+  <div class="guard-head">
+    <div><span class="guard-eyebrow">GD SLEEP GUARD</span><strong id="guard-mode">未开启</strong><small id="guard-phase">GD 助眠状态：未开启</small></div>
+    <div id="guard-badge" class="guard-badge">等待进入深睡守护</div>
+  </div>
+  <div class="guide-control">
+    <div><strong>自动睡前语音引导</strong><span id="auto-guide-status">关闭后，进入助眠模式不会播放 NX 引导</span></div>
+    <label class="toggle" title="自动睡前语音引导">
+      <input id="auto-guide-toggle" type="checkbox" role="switch" aria-label="自动睡前语音引导">
+      <i></i><b id="auto-guide-label">已关闭</b>
+    </label>
+  </div>
+  <div class="guard-metrics">
+    <article class="sleep-timer-card"><span>本次睡眠计时</span><b id="sleep-timer">00:00:00</b><small id="sleep-timer-detail">等待进入助眠模式</small></article>
+    <article><span>GD 睡眠阶段</span><b id="guard-sleep-state">--</b><small id="guard-stable-index">稳定睡眠指数 --</small></article>
+    <article><span>苏醒风险</span><b id="guard-risk">--</b><small id="guard-risk-level">等待评估</small></article>
+    <article class="intervention-card"><span>当前监测 / 干预</span><b id="guard-intervention">持续监测</b><small id="guard-action-code">GD 动作：--</small></article>
+    <article><span>GD 输出状态</span><b id="guard-output">无输出</b><small id="guard-output-detail">音频与灯光待命</small></article>
+  </div>
+  <div class="guard-risk-track"><i id="guard-risk-fill"></i><span class="risk-mark r35">35</span><span class="risk-mark r55">55</span><span class="risk-mark r75">75</span></div>
+  <dl class="guard-details">
+    <div><dt>状态依据</dt><dd id="guard-reason">等待 GD 实时状态</dd></div>
+    <div><dt>GD 实际策略</dt><dd>35–54：粉红噪声；55–74：呼吸引导；≥75：低刺激安抚；离床：路径灯。低风险但稳定不足：暖色呼吸灯。</dd></div>
+  </dl>
+</section></div><div class="model-column"><h2 class="module-heading">AIoT 睡眠异常推理</h2><section class="model-panel">
+  <div class="model-head"><div><span>运行模型</span><strong id="model-name">--</strong></div><div id="model-ready" class="model-badge">等待模型</div></div>
+  <div class="model-metrics">
+    <article><span>异常觉醒风险</span><b id="arousal-risk">--</b><small>0–100%，越高表示当前窗口越异常</small></article>
+    <article><span>分类置信度</span><b id="model-confidence">--</b><small>模型对当前状态判断的确定程度</small></article>
+    <article><span>呼吸相位振幅</span><b id="breath-amplitude">--</b><small>毫米波雷达最近窗口的稳健振幅</small></article>
+    <article><span>推理状态</span><b id="model-label">--</b><small id="model-label-note">等待实时数据</small></article>
+  </div>
+  <div class="risk-track"><i id="risk-fill"></i><em class="risk-low">稳定 &lt;55%</em><em class="risk-mid">关注 55–82%</em><em class="risk-high">高风险 ≥82%</em></div>
+  <dl class="model-details"><div><dt>判定依据</dt><dd id="model-reason">--</dd></div><div><dt>数据窗口</dt><dd id="model-window">--</dd></div></dl>
+  <p class="model-warning">工程风险估算，仅用于趋势观察；不用于医学诊断或标准睡眠分期。</p>
+</section></div></div>
+    </section>
+    <section class="view-panel monitor-view" id="view-timeline" data-panel="timeline" hidden>
+      <header class="page-heading"><div><p class="eyebrow">SLEEP TIMELINE</p><h1 id="timeline-title">上次睡眠时间轴</h1></div><button type="button" id="timeline-back" hidden>← 返回历史报告</button><span id="timeline-record-status" class="source-tag">最近一次已结束记录</span></header>
+      <article class="panel timeline-panel">
+        <div class="timeline-toolbar"><div><p class="eyebrow">SLEEP STAGES & EVENTS</p><h2>睡眠阶段与事件</h2></div></div>
+        <div class="timeline-scale"><span id="timeline-start">--</span><span>完整睡眠记录 · 点击查看详情</span><span id="timeline-end">--</span></div>
+        <div class="timeline-track" id="timeline-track"><canvas id="sleep-stage-chart" tabindex="0" aria-label="睡眠阶段时间轴"></canvas></div>
+        <div class="timeline-key"><span style="--key:#efa96c">清醒</span><span style="--key:#c667df">浅睡</span><span style="--key:#8054dd">深睡</span><i></i><span class="event-key" style="--key:#f6c76d">翻身</span><span class="event-key" style="--key:#66e3cd">睡眠干预</span><span class="event-key" style="--key:#ef91b4">鼾声</span><span class="event-key" style="--key:#a5b5ce">离床</span><span class="event-key" style="--key:#72baf0">回床</span><span style="--key:#3c5368">其他 / 未知</span></div>
+        <div class="timeline-inspection"><span id="timeline-inspect">点击色块查看睡眠时段；点击下方圆点查看事件，数字表示此处聚合的事件数量。</span><div id="timeline-picker"></div></div>
+      </article>
+      <div class="timeline-bottom"><article class="panel event-list-panel"><div class="panel-title"><div><p class="eyebrow">KEY EVENTS</p><h2>关键事件</h2></div><span id="event-count">0 条</span></div><div class="event-list" id="event-list"><p class="empty-copy">暂无可展示事件</p></div></article><article class="panel event-detail-panel"><div class="panel-title"><div><p class="eyebrow">SLEEP ASSESSMENT</p><h2>睡眠评估</h2></div><span class="source-tag">已结束记录</span></div><div id="session-assessment" class="session-assessment"></div></article></div>
+    </section>
+
+    <section class="view-panel monitor-view" id="view-reports" data-panel="reports" hidden>
+      <header class="page-heading"><div><p class="eyebrow">SLEEP REPORTS</p><h1>历史报告与综合评估</h1></div>
+        <div class="report-history">
+          <small class="report-notice" id="report-notice">当前仅显示 NX 缓存摘要；整晚历史报告接口未接入，不会将短时缓存伪装成整夜报告。</small>
+          <button type="button" id="open-sleep-record" aria-expanded="false" aria-controls="sleep-record-list">查看历史记录</button>
+          <div id="sleep-record-list" class="sleep-record-list" hidden role="region" aria-label="历史睡眠记录"><p>正在读取睡眠记录…</p></div>
+        </div>
+      </header>
+      <section class="report-stats"><article><span>有效样本</span><strong id="report-samples">--</strong><small>条</small></article><article><span>平均心率</span><strong id="report-heart">--</strong><small>BPM</small></article><article><span>平均呼吸</span><strong id="report-breath">--</strong><small>次/分</small></article><article><span>最大体动</span><strong id="report-motion">--</strong><small>强度</small></article><article><span>平均评分</span><strong id="report-score">--</strong><small>分</small></article></section>
+      <div class="report-body"><article class="panel score-chart-panel"><div class="panel-title"><div><p class="eyebrow">RECENT NIGHTS</p><h2>近期睡眠质量</h2></div><span class="source-tag" id="report-source">缓存数据</span></div><canvas id="report-score-bars"></canvas><div id="score-bars-empty" class="chart-empty">等待历史睡眠记录接口</div></article><article class="panel report-trends"><div class="large-chart-grid"><figure><figcaption><span>心率趋势</span><small>BPM</small></figcaption><canvas id="report-heart-chart"></canvas></figure><figure><figcaption><span>呼吸趋势</span><small>次/分</small></figcaption><canvas id="report-breath-chart"></canvas></figure><figure><figcaption><span>体动趋势</span><small>强度</small></figcaption><canvas id="report-motion-chart"></canvas></figure></div></article><article class="panel assessment-panel"><div class="panel-title"><div><p class="eyebrow">ASSESSMENT</p><h2>综合评估</h2></div><button type="button" id="report-detail-open" class="assessment-open">查看完整评估</button></div><p id="report-assessment">等待评估接口，不生成无依据结论。</p><ul id="report-issues" class="report-issues"></ul><h3>优先建议</h3><ul id="report-suggestions"><li>等待真实睡眠记录与模型分析结果。</li></ul><small id="report-missing">缺失指标：--</small></article></div>
+    </section>
+
+    <section class="view-panel monitor-view" id="view-ai" data-panel="ai" hidden>
+      <header class="page-heading"><div><p class="eyebrow">LOCAL QWEN</p><h1>AI 小梦</h1></div><div class="ai-health"><span id="ai-model-state">模型检查中</span><span id="ai-data-scope">数据范围：当前状态</span></div></header>
+      <div class="ai-layout"><article class="panel ai-conversation"><div class="ai-intro"><img src="/static/xiaomeng/wait.png" alt="小梦"><div><strong>小梦</strong><p>只根据 NX 提供的真实数据回答，并明确标注缺失指标。</p></div></div><div class="chat-log" id="chat-log"><div class="chat-message assistant"><strong>小梦</strong><p>等待本地 Qwen 与安全分析接口就绪。</p></div></div><div class="quick-question-grid"><button type="button" data-question="分析当前睡眠状态" disabled>分析当前状态</button><button type="button" data-question="解释当前苏醒风险" disabled>解释苏醒风险</button><button type="button" data-question="总结指定睡眠记录" disabled>总结睡眠记录</button><button type="button" data-question="列出当前缺失指标" disabled>说明缺失指标</button></div><form class="prompt-box" id="ai-form"><label for="ai-input">输入问题或控制指令</label><div><textarea id="ai-input" rows="2" disabled placeholder="等待 /api/ai/query 接口"></textarea><button type="submit" id="ai-send" disabled>发送</button></div></form></article></div>
+    </section>
+
+    <section class="view-panel monitor-view" id="view-control" data-panel="control" hidden>
+      <header class="page-heading"><div><p class="eyebrow">SAFE CONTROL</p><h1>设备与机械臂控制</h1></div><span class="scope-badge" id="control-capability">正在检查控制接口</span></header>
+      <div class="control-notice" id="control-notice"><strong>安全链路：</strong>前端预览 → NX 白名单 → 设备执行 → 回执更新。设备离线或接口未接入时全部控制自动禁用。</div>
+      <section class="control-grid">
+        <article class="panel control-card" data-control-card="brightness"><div class="control-heading"><div><p class="eyebrow">LIGHT</p><h2>灯光亮度</h2></div><strong data-confirmed-value="brightness">--%</strong></div><input type="range" min="0" max="100" value="0" data-range="brightness" disabled><div class="control-actions"><button type="button" data-action="light_off" disabled>关灯</button><button type="button" data-action="light_on" disabled>开灯</button></div><p data-command-status="brightness">等待设备返回值</p></article>
+        <article class="panel control-card" data-control-card="volume"><div class="control-heading"><div><p class="eyebrow">VOLUME</p><h2>助眠音量</h2></div><strong data-confirmed-value="volume">--%</strong></div><input type="range" min="0" max="100" value="0" data-range="volume" disabled><div class="control-actions"><button type="button" data-action="mute" disabled>静音</button><button type="button" data-action="unmute" disabled>恢复</button></div><p data-command-status="volume">等待设备返回值</p></article>
+        <article class="panel control-card scene-card" data-control-card="scene"><div class="control-heading"><div><p class="eyebrow">SOUND SCENE</p><h2>助眠声音场景</h2></div><strong data-playback-state>未连接</strong></div><select data-scene-select disabled><option value="">等待场景列表</option></select><div class="control-actions three"><button type="button" data-action="play" disabled>播放</button><button type="button" data-action="pause" disabled>暂停</button><button type="button" data-action="stop" disabled>停止</button></div><p data-command-status="scene">当前场景：<span data-current-scene>--</span></p></article>
+      </section>
+      <section class="robot-panel panel"><div class="robot-state"><p class="eyebrow">ROBOT ARM</p><h2>机械臂受控操作</h2><span id="robot-state">状态未接入</span></div><div class="robot-lock" id="robot-lock" data-state="locked"><strong>安全锁定</strong><p>熟睡时禁止工作；所有动作均需 NX 再次校验。</p></div><div class="robot-actions"><button type="button" data-robot-action="fetch_water" disabled>递送水杯</button><button type="button" data-robot-action="fetch_item" disabled>取指定物品</button><button type="button" data-robot-action="return_home" disabled>回到待机位</button></div><p id="robot-command-status">等待机械臂状态接口</p></section>
+    </section>
+
+    <section class="view-panel monitor-view" id="view-esp" data-panel="esp" hidden>
+      <header class="page-heading"><div><p class="eyebrow">ESP SENSOR EXTENSION</p><h1>ESP 扩展传感器数据</h1></div><div class="esp-page-actions"><span class="source-tag" id="esp-page-status">等待上报</span><button class="touch-button esp-back-button" type="button" data-open-view="dashboard">返回实时检测</button></div></header>
+      <section class="esp-overview">
+        <article class="panel esp-signal-card"><div class="panel-title"><div><p class="eyebrow">EEG STATUS</p><h2>脑电采集状态</h2></div></div><div class="esp-signal-metrics"><div><span>采样率</span><strong id="esp-sample-rate">--</strong><small>Hz</small></div><div><span>信号质量</span><strong id="esp-signal-quality">--</strong><small>%</small></div><div><span>电极接触</span><strong id="esp-contact">--</strong></div><div><span>批次采样点</span><strong id="esp-sample-count">--</strong><small>点</small></div></div><p class="esp-data-note" id="esp-data-note">尚未收到真实 ESP 脑电数据。</p></article>
+      </section>
+      <section class="esp-data-grid">
+        <div class="esp-wave-stack">
+        <article class="panel esp-wave-panel"><div class="panel-title"><div><p class="eyebrow">RAW EEG</p><h2>原始脑电波形</h2></div><span id="esp-wave-range" class="source-tag">--</span></div><div class="esp-wave-wrap"><canvas id="esp-wave-chart" aria-label="ESP原始脑电波形"></canvas><div class="chart-empty" id="esp-wave-empty">等待 raw_samples</div></div></article>
+        <article class="panel esp-filter-panel"><div class="panel-title"><div><p class="eyebrow">EEG FREQUENCY BANDS</p><h2>五频段脑电波形</h2></div><span class="source-tag" id="esp-filter-state">等待数据</span></div><div class="esp-wave-wrap"><canvas id="esp-filter-chart" aria-label="原始脑电分频波形"></canvas></div></article>
+        </div>
+        <article class="panel esp-band-panel"><div class="panel-title"><div><p class="eyebrow">BAND POWER</p><h2>脑电频带功率</h2></div></div><div class="esp-band-cards" id="esp-band-list"><article class="sensor-card" data-band="delta"><span>δ Delta</span><strong>--</strong><small>%</small><em>0.5–4 Hz · 相对功率</em></article><article class="sensor-card" data-band="theta"><span>θ Theta</span><strong>--</strong><small>%</small><em>4–8 Hz · 相对功率</em></article><article class="sensor-card" data-band="alpha"><span>α Alpha</span><strong>--</strong><small>%</small><em>8–13 Hz · 相对功率</em></article><article class="sensor-card" data-band="beta"><span>β Beta</span><strong>--</strong><small>%</small><em>13–30 Hz · 相对功率</em></article><article class="sensor-card" data-band="gamma"><span>γ Gamma</span><strong>--</strong><small>%</small><em>30–45 Hz · 相对功率</em></article></div></article>
+      </section>
+    </section>
+
+    <section class="view-panel monitor-view" id="view-system" data-panel="system" hidden>
+      <header class="page-heading"><div><p class="eyebrow">SYSTEM HEALTH</p><h1>系统运行状态</h1></div><button class="touch-button" type="button" id="refresh-system">立即刷新</button></header>
+      <section class="health-grid"><article class="health-card" id="health-bridge" data-state="pending"><i></i><span>NX 桥接服务</span><strong>检查中</strong><small id="health-uptime">运行时长 --</small></article><article class="health-card" id="health-dg" data-state="pending"><i></i><span>DreamGuardian</span><strong>检查中</strong><small id="health-dg-url">地址 --</small></article><article class="health-card" id="health-qwen" data-state="pending"><i></i><span>本地 Qwen</span><strong>检查中</strong><small id="health-qwen-model">模型 --</small></article><article class="health-card" id="health-model" data-state="pending"><i></i><span>异常模型</span><strong>检查中</strong><small id="health-model-reason">原因 --</small></article><article class="health-card" id="health-db" data-state="pending"><i></i><span>本地数据库</span><strong>检查中</strong><small>睡眠记录存储</small></article><article class="health-card" id="health-ws" data-state="pending"><i></i><span>WebSocket</span><strong>连接中</strong><small>实时推送通道</small></article></section>
+      <div class="system-body"><article class="panel nx-telemetry"><div class="panel-title"><div><p class="eyebrow">NX TELEMETRY</p><h2>Jetson NX</h2></div><span id="nx-source" class="source-tag">部分接入</span></div><div class="nx-grid"><div><span>CPU</span><strong id="nx-cpu">--%</strong></div><div><span>GPU</span><strong id="nx-gpu">--%</strong></div><div><span>RAM</span><strong id="nx-ram">--%</strong></div><div><span>温度</span><strong id="nx-temperature">--°C</strong></div><div><span>数据延迟</span><strong id="nx-latency">-- ms</strong></div><div><span>DG IP</span><strong id="nx-dg-ip">--</strong></div></div></article><article class="panel telemetry-cache"><div class="panel-title"><div><p class="eyebrow">TELEMETRY CACHE</p><h2>最新遥测</h2></div></div><dl class="state-list"><div><dt>帧序号</dt><dd id="telemetry-seq">--</dd></div><div><dt>设备运行时长</dt><dd id="telemetry-uptime">--</dd></div><div><dt>雷达相位延迟</dt><dd id="telemetry-radar-age">--</dd></div><div><dt>CSI 数据包</dt><dd id="telemetry-csi-packets">--</dd></div><div><dt>自动干预</dt><dd id="auto-action">--</dd></div><div><dt>最后错误</dt><dd id="last-error">--</dd></div></dl></article><article class="panel capability-panel"><div class="panel-title"><div><p class="eyebrow">INTERFACE COVERAGE</p><h2>接口覆盖</h2></div></div><ul id="capability-list"><li class="available">实时数据与 WebSocket：已接入</li><li class="available">短时历史与系统事件：已接入</li><li>压力热力图、温湿度、皮肤电：等待接口</li><li>设备控制、机械臂、整晚报告：等待接口</li><li>AI 文字分析：等待安全分析接口</li></ul></article></div>
+    </section>
+  </main>
+</div>
+<div class="screen-sleep" id="screen-sleep" hidden><div><span class="sleep-moon">☾</span><strong>已进入安心守护模式</strong><p>轻触屏幕查看当前状态</p></div></div>
+<dialog class="settings-dialog" id="settings-dialog">
+  <form method="dialog" class="settings-shell">
+    <header><div><p class="eyebrow">QUICK SETTINGS</p><h2>助眠设备设置</h2></div><button type="submit" value="close" class="dialog-close" aria-label="关闭设置">×</button></header>
+    <p class="settings-note" id="settings-note">设备返回值将决定页面最终显示；离线时控制自动禁用。</p>
+    <div class="settings-grid">
+      <article class="control-card panel" data-control-card="brightness"><div class="control-heading"><div><p class="eyebrow">LIGHT</p><h2>灯光亮度</h2></div><strong data-confirmed-value="brightness">--%</strong></div><input type="range" min="0" max="100" value="0" data-range="brightness" disabled aria-label="灯光亮度"><div class="control-actions"><button type="button" data-action="light_off" disabled>关灯</button><button type="button" data-action="light_on" disabled>开灯</button></div><p data-command-status="brightness">等待设备返回值</p></article>
+      <article class="control-card panel" data-control-card="volume"><div class="control-heading"><div><p class="eyebrow">VOLUME</p><h2>助眠音量</h2></div><strong data-confirmed-value="volume">--%</strong></div><input type="range" min="0" max="100" value="0" data-range="volume" disabled aria-label="助眠音量"><div class="control-actions"><button type="button" data-action="mute" disabled>静音</button><button type="button" data-action="unmute" disabled>恢复</button></div><p data-command-status="volume">等待设备返回值</p></article>
+      <article class="control-card panel scene-card" data-control-card="scene"><div class="control-heading"><div><p class="eyebrow">SOUND SCENE</p><h2>助眠声音场景</h2></div><strong data-playback-state>未连接</strong></div><select data-scene-select disabled aria-label="选择助眠声音"><option value="">等待场景列表</option></select><div class="control-actions three"><button type="button" data-action="play" disabled>播放</button><button type="button" data-action="pause" disabled>暂停</button><button type="button" data-action="stop" disabled>停止</button></div><p data-command-status="scene">当前场景：<span data-current-scene>--</span></p></article>
+    </div>
+  </form>
+</dialog>
+<dialog class="confirm-dialog" id="confirm-dialog"><form method="dialog"><p class="eyebrow">SAFETY CONFIRMATION</p><h2>确认机械臂操作</h2><p id="confirm-message">请确认当前环境安全，机械臂工作区域内没有障碍物。</p><div><button value="cancel">取消</button><button value="confirm" class="danger-confirm">确认执行</button></div></form></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<script src="/static/live-waveform.js?v=30"></script>
+<script src="/static/pressure-field.js?v=1"></script>
+<script src="/static/vendor/three.min.js"></script>
+<script src="/static/sleep-modules.js?v=resting-slow-20260924"></script>
+<script src="/static/xiaomeng.js?v=2"></script>
+<script src="/static/eeg-bands.js?v=1"></script>
+<script src="/static/sleep-timeline.js?v=resting-slow-20260924"></script>
+<script src="/static/assessment-detail.js?v=resting-slow-20260924"></script>
+<script src="/static/session-assessment.js?v=resting-slow-20260924"></script>
+<script src="/static/sleep-archive.js?v=resting-slow-20260924"></script>
+<script src="/static/last-sleep.js?v=resting-slow-20260924"></script>
+<script src="/static/signal-details.js?v=resting-slow-20260924"></script>
+<script src="/static/app.js?v=resting-slow-20260924"></script>
+<link rel="stylesheet" href="/static/report-history.css?v=2">
+<link rel="stylesheet" href="/static/xiaomeng-companion.css?v=5">
+<script src="/static/xiaomeng-companion.js?v=resting-slow-20260924"></script>
+</body>
+</html>
